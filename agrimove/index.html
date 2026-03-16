@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgriMove – Logistics for Farmers & Buyers</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f0; color: #222; }
+
+    nav {
+      background: #1a6b2f; padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 50;
+    }
+    .logo { color: #fff; font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+    .logo span { color: #f9c74f; }
+    nav ul { list-style: none; display: flex; gap: 2rem; }
+    nav ul li a { color: #c8f0d0; text-decoration: none; font-size: 0.95rem; transition: color .2s; }
+    nav ul li a:hover { color: #fff; }
+    .nav-btn { background: #f9c74f; color: #1a3a0f; border: none; padding: 0.5rem 1.3rem; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(140deg, #0f4a20 0%, #1a6b2f 40%, #2d9e4f 100%);
+      color: #fff; padding: 3.5rem 2rem 0; text-align: center;
+    }
+    .hero h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.7rem; }
+    .hero h1 span { color: #f9c74f; }
+    .hero .sub { font-size: 1.05rem; opacity: 0.88; max-width: 520px; margin: 0 auto 2rem; }
+
+    /* HERO SEARCH */
+    .hero-search {
+      background: #fff; border-radius: 18px 18px 0 0;
+      padding: 1.8rem 2rem 1.5rem; max-width: 780px; margin: 0 auto;
+      box-shadow: 0 -4px 30px rgba(0,0,0,0.15); text-align: left;
+    }
+    .hero-search h3 { font-size: 1rem; color: #1a6b2f; font-weight: 700; margin-bottom: 1.1rem; }
+    .hs-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .hs-group { flex: 1; min-width: 200px; position: relative; }
+    .hs-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #777; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: .5px; }
+    .hs-group input, .hs-group select {
+      width: 100%; padding: 0.65rem 1rem; border: 1.5px solid #e0e0d8;
+      border-radius: 10px; font-size: 0.93rem; background: #fafaf8; transition: border-color .2s;
+    }
+    .hs-group input:focus, .hs-group select:focus { outline: none; border-color: #2d9e4f; }
+
+    /* distance auto-calc badge */
+    .dist-badge {
+      display: none; background: #e8f5e9; border: 1px solid #a5d6a7;
+      border-radius: 10px; padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+      align-items: center; gap: 0.6rem; font-size: 0.9rem;
+    }
+    .dist-badge.show { display: flex; }
+    .dist-badge .dist-km { font-size: 1.2rem; font-weight: 800; color: #1a6b2f; }
+    .dist-badge .dist-label { color: #555; font-size: 0.82rem; }
+    .dist-badge .spinner { width: 18px; height: 18px; border: 2px solid #a5d6a7; border-top-color: #2d9e4f; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .price-row {
+      display: none; background: #f1fff4; border: 1px solid #a5d6a7;
+      border-radius: 10px; padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+      align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .price-row.show { display: flex; }
+    .price-row .pr-label { font-size: 0.8rem; color: #388e3c; font-weight: 600; }
+    .price-row .pr-value { font-size: 1.35rem; font-weight: 800; color: #1a6b2f; }
+    .price-row .pr-note { font-size: 0.75rem; color: #888; }
+
+    .hs-search-btn {
+      width: 100%; background: #1a6b2f; color: #fff; border: none;
+      padding: 0.85rem; border-radius: 12px; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: background .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .hs-search-btn:hover { background: #14541f; }
+    .hs-search-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* CALC STATUS (inline under addresses) */
+    .calc-status { font-size: 0.78rem; color: #888; min-height: 1.1rem; margin-bottom: 0.4rem; display:flex; align-items:center; gap:6px; }
+    .calc-status .mini-spin { width:13px;height:13px;border:2px solid #ccc;border-top-color:#2d9e4f;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0; }
+
+    /* HOME RESULTS */
+    .home-results { background: #fff; padding: 1.5rem 2rem 2rem; max-width: 780px; margin: 0 auto 2rem; border-radius: 0 0 18px 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); display: none; }
+    .home-results.show { display: block; }
+    .home-results h4 { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 1rem; }
+
+    /* STATS */
+    .stats { display: flex; justify-content: center; gap: 3rem; background: #fff; padding: 2rem; flex-wrap: wrap; border-bottom: 1px solid #e0e0d8; margin-top: 2rem; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2rem; font-weight: 800; color: #1a6b2f; }
+    .stat .label { font-size: 0.85rem; color: #666; margin-top: 2px; }
+
+    /* HOW IT WORKS */
+    .how-wrap { padding: 3rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .how-bg { background: #1a6b2f; border-radius: 16px; padding: 3rem 2rem; color: #fff; }
+    .how-inner { text-align: center; }
+    .how-inner h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .how-inner .sub { color: #a8d8b9; margin-bottom: 2.5rem; }
+    .steps { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+    .step { background: rgba(255,255,255,0.1); border-radius: 14px; padding: 1.5rem 1.1rem; width: 190px; }
+    .step .icon { font-size: 2rem; margin-bottom: 0.6rem; }
+    .step h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .step p { font-size: 0.8rem; color: #c8f0d0; line-height: 1.4; }
+
+    /* FIND PAGE */
+    .section { padding: 2.5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section h2 { font-size: 1.7rem; font-weight: 700; color: #1a6b2f; margin-bottom: 0.3rem; }
+    .section p.sub { color: #666; margin-bottom: 1.6rem; }
+    .search-card { background: #fff; border-radius: 16px; padding: 1.8rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .search-card h3 { font-size: 1rem; color: #333; font-weight: 700; margin-bottom: 1rem; }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .form-group { flex: 1; min-width: 160px; position: relative; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #777; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: .5px; }
+    .form-group input, .form-group select { width: 100%; padding: 0.65rem 1rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.93rem; background: #fafaf8; transition: border-color .2s; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #2d9e4f; }
+    .search-btn { background: #1a6b2f; color: #fff; border: none; padding: 0.75rem 2.5rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .2s; margin-top: 0.5rem; }
+    .search-btn:hover { background: #14541f; }
+    .search-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.3rem; flex-wrap: wrap; }
+    .tab-btn { padding: 0.45rem 1.1rem; border-radius: 20px; border: 1.5px solid #ddd; background: #fff; font-size: 0.85rem; cursor: pointer; font-weight: 600; color: #555; transition: all .2s; }
+    .tab-btn.active { background: #1a6b2f; color: #fff; border-color: #1a6b2f; }
+
+    /* DRIVER CARDS (with price — post-search) */
+    .drivers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 1.1rem; }
+    .driver-card { background: #fff; border-radius: 14px; padding: 1.3rem; box-shadow: 0 2px 12px rgba(0,0,0,0.07); border: 1.5px solid #eee; transition: transform .15s, box-shadow .15s; cursor: pointer; }
+    .driver-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.13); border-color: #b2dfb8; }
+    .driver-header { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 0.9rem; }
+    .driver-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #2d9e4f, #52c57a); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .driver-info h4 { font-size: 0.97rem; font-weight: 700; color: #222; }
+    .driver-info .vehicle { font-size: 0.8rem; color: #888; margin-top: 2px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: auto; flex-shrink: 0; }
+    .badge.available { background: #e8f5e9; color: #2e7d32; }
+    .badge.busy { background: #fff3e0; color: #e65100; }
+    .driver-chips { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .chip { background: #f5f5f0; border-radius: 20px; padding: 0.25rem 0.7rem; font-size: 0.77rem; color: #555; }
+    .driver-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.8rem; border-top: 1px solid #f0f0ea; }
+    .driver-footer .fare { font-size: 1.15rem; font-weight: 800; color: #1a6b2f; }
+    .driver-footer .per-km { font-size: 0.75rem; color: #aaa; }
+    .view-btn { background: #1a6b2f; color: #fff; border: none; padding: 0.45rem 1.1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+
+    /* BROWSE CARDS (no price) */
+    .browse-card { background: #fff; border-radius: 14px; padding: 1.3rem; box-shadow: 0 2px 12px rgba(0,0,0,0.07); border: 1.5px solid #eee; transition: transform .15s, box-shadow .15s; cursor: pointer; }
+    .browse-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.13); border-color: #b2dfb8; }
+    .browse-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.8rem; border-top: 1px solid #f0f0ea; }
+    .browse-footer .rate-hint { font-size: 0.82rem; color: #aaa; font-style: italic; }
+    .details-btn { background: #f9c74f; color: #1a3a0f; border: none; padding: 0.45rem 1.1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+
+    /* MODALS */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-bg.open { display: flex; }
+    .modal { background: #fff; border-radius: 18px; max-width: 480px; width: 100%; box-shadow: 0 12px 50px rgba(0,0,0,0.25); animation: pop .2s ease; max-height: 90vh; overflow-y: auto; }
+    @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { padding: 1.3rem 1.5rem 1rem; border-bottom: 1px solid #f0f0ea; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 1.1rem; color: #1a6b2f; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #aaa; line-height: 1; }
+    .modal-body { padding: 1.2rem 1.5rem; }
+    .modal-footer { padding: 0.8rem 1.5rem 1.4rem; }
+
+    /* driver detail */
+    .dd-hero { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+    .dd-avatar { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #2d9e4f, #52c57a); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: #fff; }
+    .dd-name { font-size: 1.05rem; font-weight: 700; }
+    .dd-vehicle { font-size: 0.83rem; color: #888; margin-top: 2px; }
+    .info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f5f5f0; font-size: 0.88rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .key { color: #888; }
+    .info-row .val { font-weight: 600; color: #222; }
+    .price-highlight { background: linear-gradient(135deg,#e8f5e9,#f1fff4); border: 1px solid #a5d6a7; border-radius: 12px; padding: 1rem 1.2rem; margin: 1rem 0; text-align: center; }
+    .price-highlight .big { font-size: 1.9rem; font-weight: 800; color: #1a6b2f; }
+    .price-highlight .small { font-size: 0.8rem; color: #666; margin-top: 3px; }
+    .book-now-btn { width: 100%; background: #1a6b2f; color: #fff; border: none; padding: 0.85rem; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s; }
+    .book-now-btn:hover { background: #14541f; }
+    .book-now-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* booking */
+    .section-title { font-size: 0.78rem; font-weight: 700; color: #1a6b2f; text-transform: uppercase; letter-spacing: .5px; margin: 1rem 0 0.55rem; }
+    .booking-field { margin-bottom: 0.75rem; }
+    .booking-field label { display: block; font-size: 0.75rem; font-weight: 600; color: #777; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 0.28rem; }
+    .booking-field input, .booking-field select, .booking-field textarea, .booking-field-input { width: 100%; padding: 0.6rem 0.9rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.91rem; background: #fafaf8; font-family: inherit; transition: border-color .2s; }
+    .booking-field input:focus, .booking-field select:focus, .booking-field textarea:focus { outline: none; border-color: #2d9e4f; }
+    .booking-field .readonly-dist { background: #e8f5e9; color: #1a6b2f; font-weight: 700; border-color: #a5d6a7; }
+    .booking-field textarea { resize: vertical; min-height: 56px; }
+    .bf-row { display: flex; gap: 0.75rem; }
+    .bf-row .booking-field { flex: 1; }
+    .summary-box { background: #f9fdf9; border: 1px solid #c8e6c9; border-radius: 10px; padding: 0.9rem; margin-bottom: 0.8rem; }
+    .summary-box .sr { display: flex; justify-content: space-between; font-size: 0.86rem; padding: 0.28rem 0; }
+    .summary-box .sr .sk { color: #666; }
+    .summary-box .sr .sv { font-weight: 600; }
+    .summary-box .total { display: flex; justify-content: space-between; border-top: 1px solid #c8e6c9; margin-top: 0.5rem; padding-top: 0.55rem; font-size: 1rem; font-weight: 800; color: #1a6b2f; }
+    .confirm-btn { width: 100%; background: #1a6b2f; color: #fff; border: none; padding: 0.85rem; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s; }
+    .confirm-btn:hover { background: #14541f; }
+    .success-msg { text-align: center; padding: 1.5rem 1rem; }
+    .success-msg .check { font-size: 3.5rem; margin-bottom: 0.5rem; }
+    .success-msg h3 { font-size: 1.25rem; color: #1a6b2f; margin-bottom: 0.4rem; }
+    .success-msg p { color: #666; font-size: 0.88rem; }
+
+    footer { background: #111; color: #aaa; text-align: center; padding: 1.5rem; font-size: 0.85rem; margin-top: 2rem; }
+    footer span { color: #f9c74f; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="showPage('home')">Agri<span>Move</span></div>
+  <ul>
+    <li><a href="#" onclick="showPage('home')">Home</a></li>
+    <li><a href="#" onclick="showPage('find')">Find Driver</a></li>
+    <li><a href="#" onclick="showPage('drivers')">All Drivers</a></li>
+  </ul>
+  <button class="nav-btn" onclick="showPage('find')">Book Now</button>
+</nav>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <h1>Move Your Harvest<br/>with <span>Trusted Drivers</span></h1>
+    <p class="sub">Type your pickup and destination — we'll find drivers near you and calculate the cost automatically.</p>
+
+    <div class="hero-search">
+      <h3>📍 Where are you sending your produce?</h3>
+      <div class="hs-row">
+        <div class="hs-group">
+          <label>Pickup Location</label>
+          <input type="text" id="h-pickup" placeholder="e.g. Musanze, Rwanda"
+            oninput="scheduleCalc('h')" />
+        </div>
+        <div class="hs-group">
+          <label>Destination</label>
+          <input type="text" id="h-dest" placeholder="e.g. Kigali, Rwanda"
+            oninput="scheduleCalc('h')" />
+        </div>
+      </div>
+
+      <!-- status / distance result -->
+      <div class="calc-status" id="h-status"></div>
+      <div class="dist-badge" id="h-dist-badge">
+        <span class="dist-km" id="h-km">—</span>
+        <div>
+          <div class="dist-label" id="h-route-label">calculated distance</div>
+        </div>
+      </div>
+      <div class="price-row" id="h-price-row">
+        <div>
+          <div class="pr-label">Estimated Price Range</div>
+          <div class="pr-value" id="h-price-val">—</div>
+        </div>
+        <div style="text-align:right">
+          <div class="pr-note" id="h-price-note"></div>
+          <div class="pr-note">RWF 420 – 750 per km</div>
+        </div>
+      </div>
+
+      <div class="hs-row">
+        <div class="hs-group">
+          <label>Cargo Type</label>
+          <select id="h-cargo" onchange="toggleCustomCargo('h')">
+            <option value="">— Select crop / cargo —</option>
+            <optgroup label="Vegetables">
+              <option>Potatoes</option><option>Tomatoes</option><option>Onions</option>
+              <option>Cabbage</option><option>Carrots</option><option>Eggplant</option>
+            </optgroup>
+            <optgroup label="Fruits">
+              <option>Bananas</option><option>Avocados</option><option>Mangoes</option>
+              <option>Pineapples</option><option>Passion Fruit</option>
+            </optgroup>
+            <optgroup label="Grains &amp; Legumes">
+              <option>Maize / Corn</option><option>Beans</option><option>Sorghum</option>
+              <option>Rice</option><option>Wheat</option><option>Soybeans</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Livestock / Animals</option><option>Dairy Products</option>
+              <option>Coffee / Tea</option><option>Sugar Cane</option>
+              <option value="__custom__">✏️ Other (type your own…)</option>
+            </optgroup>
+          </select>
+          <input type="text" id="h-cargo-custom" placeholder="e.g. Sweet potatoes, Cassava…"
+            style="display:none;margin-top:6px;width:100%;padding:0.65rem 1rem;border:1.5px solid #e0e0d8;border-radius:10px;font-size:0.93rem;background:#fafaf8" />
+        </div>
+      </div>
+      <button class="hs-search-btn" id="h-search-btn" onclick="heroSearch()" disabled>
+        🔍 Find Drivers Near Me
+      </button>
+    </div>
+  </div>
+
+  <!-- HOME DRIVER RESULTS -->
+  <div class="home-results" id="homeResults">
+    <h4>🚛 Available Drivers Near You</h4>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="heroFilter('all',this)">All</button>
+      <button class="tab-btn" onclick="heroFilter('truck',this)">🚛 Trucks</button>
+      <button class="tab-btn" onclick="heroFilter('pickup',this)">🛻 Pickup</button>
+      <button class="tab-btn" onclick="heroFilter('van',this)">🚐 Vans</button>
+    </div>
+    <div class="drivers-grid" id="homeGrid"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">240+</div><div class="label">Active Drivers</div></div>
+    <div class="stat"><div class="num">1,800+</div><div class="label">Deliveries Made</div></div>
+    <div class="stat"><div class="num">15+</div><div class="label">Districts Covered</div></div>
+    <div class="stat"><div class="num">4.8★</div><div class="label">Average Rating</div></div>
+  </div>
+
+  <div class="how-wrap">
+    <div class="how-bg">
+      <div class="how-inner">
+        <h2>How AgriMove Works</h2>
+        <p class="sub">Simple 4-step process to move your produce</p>
+        <div class="steps">
+          <div class="step"><div class="icon">📍</div><h4>Enter Addresses</h4><p>Type pickup &amp; destination — distance is calculated for you</p></div>
+          <div class="step"><div class="icon">👀</div><h4>See Drivers</h4><p>Browse available drivers near your location instantly</p></div>
+          <div class="step"><div class="icon">💰</div><h4>Compare Prices</h4><p>Click any driver to see full pricing for your route</p></div>
+          <div class="step"><div class="icon">✅</div><h4>Book &amp; Go</h4><p>Confirm with package details — driver is notified instantly</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ FIND DRIVER ══════════════ -->
+<div id="page-find" class="page">
+  <div class="section">
+    <h2>Find Available Drivers</h2>
+    <p class="sub">Enter your route — distance is calculated automatically</p>
+    <div class="search-card">
+      <h3>🗺️ Enter Your Route</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pickup Location</label>
+          <input type="text" id="f-pickup" placeholder="e.g. Musanze, Rwanda" oninput="scheduleCalc('f')" />
+        </div>
+        <div class="form-group">
+          <label>Destination</label>
+          <input type="text" id="f-dest" placeholder="e.g. Kigali, Rwanda" oninput="scheduleCalc('f')" />
+        </div>
+      </div>
+
+      <div class="calc-status" id="f-status"></div>
+      <div class="dist-badge" id="f-dist-badge">
+        <span class="dist-km" id="f-km">—</span>
+        <div>
+          <div class="dist-label" id="f-route-label">calculated distance</div>
+        </div>
+      </div>
+      <div class="price-row" id="f-price-row">
+        <div>
+          <div class="pr-label">Estimated Price Range</div>
+          <div class="pr-value" id="f-price-val">—</div>
+        </div>
+        <div style="text-align:right">
+          <div class="pr-note" id="f-price-note"></div>
+          <div class="pr-note">RWF 420 – 750 per km</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cargo Type</label>
+          <select id="f-cargo" onchange="toggleCustomCargo('f')">
+            <option value="">— Select crop / cargo —</option>
+            <optgroup label="Vegetables">
+              <option>Potatoes</option><option>Tomatoes</option><option>Onions</option>
+              <option>Cabbage</option><option>Carrots</option><option>Eggplant</option>
+            </optgroup>
+            <optgroup label="Fruits">
+              <option>Bananas</option><option>Avocados</option><option>Mangoes</option>
+              <option>Pineapples</option><option>Passion Fruit</option>
+            </optgroup>
+            <optgroup label="Grains &amp; Legumes">
+              <option>Maize / Corn</option><option>Beans</option><option>Sorghum</option>
+              <option>Rice</option><option>Wheat</option><option>Soybeans</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Livestock / Animals</option><option>Dairy Products</option>
+              <option>Coffee / Tea</option><option>Sugar Cane</option>
+              <option value="__custom__">✏️ Other (type your own…)</option>
+            </optgroup>
+          </select>
+          <input type="text" id="f-cargo-custom" placeholder="e.g. Sweet potatoes, Cassava…"
+            style="display:none;margin-top:6px" />
+        </div>
+        <div class="form-group">
+          <label>Amount</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="f-weight" placeholder="e.g. 500" min="1" style="flex:1" />
+            <select id="f-unit" style="width:90px;padding:0.65rem 0.4rem;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;background:#fafaf8">
+              <option>kg</option><option>pieces</option><option>bags</option><option>crates</option><option>tonnes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="search-btn" id="f-search-btn" onclick="findSearch()" disabled>🔍 Search Available Drivers</button>
+    </div>
+
+    <div id="findResults" style="display:none">
+      <h3 style="margin-bottom:1rem;color:#333">Available Drivers Near You</h3>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="findFilter('all',this)">All</button>
+        <button class="tab-btn" onclick="findFilter('truck',this)">🚛 Trucks</button>
+        <button class="tab-btn" onclick="findFilter('pickup',this)">🛻 Pickup</button>
+        <button class="tab-btn" onclick="findFilter('van',this)">🚐 Vans</button>
+      </div>
+      <div class="drivers-grid" id="findGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ALL DRIVERS ══════════════ -->
+<div id="page-drivers" class="page">
+  <div class="section">
+    <h2>All Registered Drivers</h2>
+    <p class="sub">Click any driver to see pricing details and book</p>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="browseFilter('all',this)">All</button>
+      <button class="tab-btn" onclick="browseFilter('truck',this)">🚛 Trucks</button>
+      <button class="tab-btn" onclick="browseFilter('pickup',this)">🛻 Pickup</button>
+      <button class="tab-btn" onclick="browseFilter('van',this)">🚐 Vans</button>
+    </div>
+    <div class="drivers-grid" id="browseGrid"></div>
+  </div>
+</div>
+
+<!-- DRIVER DETAIL MODAL -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal" id="detailContent"></div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-bg" id="bookingModal">
+  <div class="modal" id="bookingContent"></div>
+</div>
+
+<footer>&copy; 2026 <span>AgriMove</span> — Logistics Platform for Farmers &amp; Buyers | Rwanda</footer>
+
+<script>
+/* ══════════ DATA ══════════ */
+const DRIVERS = [
+  { id:1, name:'Jean-Pierre Nkurunziza', initials:'JP', vehicle:'Isuzu Truck (5T)',      type:'truck',  capacity:'5 tonnes',   rating:4.9, trips:312, rate:600, available:true,  location:'Kigali',    crops:'All types',         phone:'+250 788 101 001' },
+  { id:2, name:'Amélie Uwimana',         initials:'AU', vehicle:'Toyota Hilux Pickup',   type:'pickup', capacity:'1 tonne',    rating:4.7, trips:184, rate:450, available:true,  location:'Musanze',   crops:'Vegetables, Dairy', phone:'+250 788 102 002' },
+  { id:3, name:'Emmanuel Habimana',      initials:'EH', vehicle:'Mitsubishi Van (1.5T)', type:'van',    capacity:'1.5 tonnes', rating:4.8, trips:229, rate:480, available:true,  location:'Huye',      crops:'Grains, Cereals',   phone:'+250 788 103 003' },
+  { id:4, name:'Solange Mukamana',       initials:'SM', vehicle:'Mercedes Actros (10T)', type:'truck',  capacity:'10 tonnes',  rating:5.0, trips:415, rate:750, available:false, location:'Rubavu',    crops:'All types',         phone:'+250 788 104 004' },
+  { id:5, name:'Patrick Bizimana',       initials:'PB', vehicle:'Nissan Navara Pickup',  type:'pickup', capacity:'1 tonne',    rating:4.6, trips:97,  rate:420, available:true,  location:'Nyanza',    crops:'Fruits, Vegetables',phone:'+250 788 105 005' },
+  { id:6, name:'Claudine Nzeyimana',     initials:'CN', vehicle:'Hino Truck (3T)',        type:'truck',  capacity:'3 tonnes',   rating:4.8, trips:276, rate:550, available:true,  location:'Muhanga',   crops:'Livestock, Grains', phone:'+250 788 106 006' },
+  { id:7, name:'Théophile Gasana',       initials:'TG', vehicle:'Ford Transit Van',       type:'van',    capacity:'1.5 tonnes', rating:4.5, trips:143, rate:460, available:true,  location:'Rwamagana', crops:'Dairy, Vegetables', phone:'+250 788 107 007' },
+  { id:8, name:'Immaculée Ingabire',     initials:'II', vehicle:'Fuso Canter (2T)',        type:'truck',  capacity:'2 tonnes',   rating:4.7, trips:188, rate:520, available:false, location:'Kayonza',   crops:'All types',         phone:'+250 788 108 008' },
+];
+
+/* ══════════ HAVERSINE ══════════ */
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/* ══════════ GEOCODE via Nominatim ══════════ */
+const geoCache = {};
+async function geocode(place) {
+  if (geoCache[place]) return geoCache[place];
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(place)}&limit=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  const data = await res.json();
+  if (!data.length) return null;
+  const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), name: data[0].display_name };
+  geoCache[place] = result;
+  return result;
+}
+
+/* ══════════ DEBOUNCED CALC ══════════ */
+let calcTimers = {};
+let calcResults = { h: null, f: null }; // { dist, pickup, dest }
+
+function scheduleCalc(prefix) {
+  clearTimeout(calcTimers[prefix]);
+  const p = document.getElementById(prefix + '-pickup') || document.getElementById('h-pickup');
+  const d = document.getElementById(prefix + '-dest') || document.getElementById('h-dest');
+  const pickup = (document.getElementById(prefix + '-pickup') || document.getElementById('h-pickup')).value.trim();
+  const dest   = (document.getElementById(prefix + '-dest')   || document.getElementById('h-dest')).value.trim();
+
+  hideDistBadge(prefix);
+  setStatus(prefix, '');
+  disableSearchBtn(prefix);
+  calcResults[prefix] = null;
+
+  if (pickup.length < 3 || dest.length < 3) return;
+
+  setStatus(prefix, '<span class="mini-spin"></span> Calculating distance…');
+  calcTimers[prefix] = setTimeout(() => calcDistance(prefix, pickup, dest), 900);
+}
+
+async function calcDistance(prefix, pickup, dest) {
+  try {
+    const [a, b] = await Promise.all([geocode(pickup), geocode(dest)]);
+    if (!a) { setStatus(prefix, '⚠️ Could not find pickup location.'); return; }
+    if (!b) { setStatus(prefix, '⚠️ Could not find destination.'); return; }
+
+    const dist = Math.round(haversine(a.lat, a.lon, b.lat, b.lon));
+    calcResults[prefix] = { dist, pickup: a.name.split(',')[0], dest: b.name.split(',')[0] };
+
+    setStatus(prefix, '');
+    showDistBadge(prefix, dist, a.name.split(',')[0], b.name.split(',')[0]);
+    showPriceRow(prefix, dist);
+    enableSearchBtn(prefix);
+  } catch(e) {
+    setStatus(prefix, '⚠️ Network error. Check connection.');
+  }
+}
+
+function setStatus(prefix, html) {
+  const el = document.getElementById(prefix + '-status');
+  if (el) el.innerHTML = html;
+}
+function hideDistBadge(prefix) {
+  const el = document.getElementById(prefix + '-dist-badge');
+  if (el) el.classList.remove('show');
+  const pr = document.getElementById(prefix + '-price-row');
+  if (pr) pr.classList.remove('show');
+}
+function showDistBadge(prefix, dist, from, to) {
+  const el = document.getElementById(prefix + '-dist-badge');
+  if (!el) return;
+  document.getElementById(prefix + '-km').textContent = dist + ' km';
+  document.getElementById(prefix + '-route-label').textContent = from + ' → ' + to;
+  el.classList.add('show');
+}
+function showPriceRow(prefix, dist) {
+  const el = document.getElementById(prefix + '-price-row');
+  if (!el) return;
+  document.getElementById(prefix + '-price-val').textContent =
+    `RWF ${(420*dist).toLocaleString()} – ${(750*dist).toLocaleString()}`;
+  document.getElementById(prefix + '-price-note').textContent = `for ${dist} km`;
+  el.classList.add('show');
+}
+function disableSearchBtn(prefix) {
+  const btn = document.getElementById(prefix + '-search-btn');
+  if (btn) btn.disabled = true;
+}
+function enableSearchBtn(prefix) {
+  const btn = document.getElementById(prefix + '-search-btn');
+  if (btn) btn.disabled = false;
+}
+
+/* ══════════ HOME SEARCH ══════════ */
+function heroSearch() {
+  const r = calcResults['h'];
+  if (!r) return;
+  renderGrid('homeGrid', 'all', r.dist);
+  const hr = document.getElementById('homeResults');
+  hr.classList.add('show');
+  hr.scrollIntoView({ behavior: 'smooth' });
+}
+function heroFilter(type, btn) {
+  document.querySelectorAll('#homeResults .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid('homeGrid', type, calcResults['h']?.dist || 0);
+}
+
+/* ══════════ FIND PAGE ══════════ */
+function findSearch() {
+  const r = calcResults['f'];
+  if (!r) return;
+  renderGrid('findGrid', 'all', r.dist);
+  document.getElementById('findResults').style.display = 'block';
+  document.getElementById('findResults').scrollIntoView({ behavior: 'smooth' });
+}
+function findFilter(type, btn) {
+  document.querySelectorAll('#findResults .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid('findGrid', type, calcResults['f']?.dist || 0);
+}
+
+/* ══════════ GRID RENDERERS ══════════ */
+function renderGrid(gridId, filter, dist) {
+  const list = filter === 'all' ? DRIVERS : DRIVERS.filter(d => d.type === filter);
+  document.getElementById(gridId).innerHTML = list.map(d => findCard(d, dist)).join('');
+}
+
+function stars(r) { return '★'.repeat(Math.floor(r)) + (r % 1 >= 0.5 ? '½' : '') + ` ${r}`; }
+
+/* card with price (post-search) */
+function findCard(d, dist) {
+  const fare = dist > 0 ? `RWF ${(d.rate * dist).toLocaleString()}` : null;
+  return `<div class="driver-card" onclick="openDetail(${d.id})">
+    <div class="driver-header">
+      <div class="driver-avatar">${d.initials}</div>
+      <div class="driver-info"><h4>${d.name}</h4><div class="vehicle">${d.vehicle}</div></div>
+      <span class="badge ${d.available ? 'available' : 'busy'}">${d.available ? '● Available' : '● Busy'}</span>
+    </div>
+    <div class="driver-chips">
+      <span class="chip">📍 ${d.location}</span>
+      <span class="chip">🌾 ${d.crops}</span>
+      <span class="chip">${stars(d.rating)}</span>
+      <span class="chip">🚚 ${d.trips} trips</span>
+    </div>
+    <div class="driver-footer">
+      <div>${fare
+        ? `<div class="fare">${fare}</div><div class="per-km">for ${dist} km · RWF ${d.rate}/km</div>`
+        : `<div class="fare">RWF ${d.rate}/km</div><div class="per-km">enter route for total</div>`}</div>
+      <button class="view-btn">View & Book</button>
+    </div>
+  </div>`;
+}
+
+/* browse card — no price */
+function browseCard(d) {
+  return `<div class="browse-card" onclick="openDetail(${d.id})">
+    <div class="driver-header">
+      <div class="driver-avatar">${d.initials}</div>
+      <div class="driver-info"><h4>${d.name}</h4><div class="vehicle">${d.vehicle}</div></div>
+      <span class="badge ${d.available ? 'available' : 'busy'}">${d.available ? '● Available' : '● Busy'}</span>
+    </div>
+    <div class="driver-chips">
+      <span class="chip">📍 ${d.location}</span>
+      <span class="chip">🌾 ${d.crops}</span>
+      <span class="chip">${stars(d.rating)}</span>
+      <span class="chip">📦 ${d.capacity}</span>
+      <span class="chip">🚚 ${d.trips} trips</span>
+    </div>
+    <div class="browse-footer">
+      <span class="rate-hint">Click to see pricing details</span>
+      <button class="details-btn">See Details →</button>
+    </div>
+  </div>`;
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  if (p === 'drivers') renderBrowse();
+  window.scrollTo(0, 0);
+}
+function renderBrowse() {
+  document.getElementById('browseGrid').innerHTML = DRIVERS.map(browseCard).join('');
+}
+function browseFilter(type, btn) {
+  document.querySelectorAll('#page-drivers .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const list = type === 'all' ? DRIVERS : DRIVERS.filter(d => d.type === type);
+  document.getElementById('browseGrid').innerHTML = list.map(browseCard).join('');
+}
+
+/* ══════════ DRIVER DETAIL MODAL ══════════ */
+function openDetail(id) {
+  const d = DRIVERS.find(x => x.id === id);
+  const dist = calcResults['h']?.dist || calcResults['f']?.dist || 0;
+  const pickup = calcResults['h']?.pickup || calcResults['f']?.pickup || '';
+  const dest   = calcResults['h']?.dest   || calcResults['f']?.dest   || '';
+  const fare = dist > 0 ? d.rate * dist : null;
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="modal-header">
+      <h3>Driver Profile</h3>
+      <button class="modal-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="dd-hero">
+        <div class="dd-avatar">${d.initials}</div>
+        <div>
+          <div class="dd-name">${d.name}</div>
+          <div class="dd-vehicle">${d.vehicle}</div>
+          <span class="badge ${d.available ? 'available' : 'busy'}" style="margin-top:4px;display:inline-block">
+            ${d.available ? '● Available' : '● Busy'}
+          </span>
+        </div>
+      </div>
+      <div class="info-row"><span class="key">Phone</span><span class="val"><a href="tel:${d.phone}" style="color:#1a6b2f;text-decoration:none;font-weight:700">📞 ${d.phone}</a></span></div>
+      <div class="info-row"><span class="key">Base Location</span><span class="val">📍 ${d.location}</span></div>
+      <div class="info-row"><span class="key">Capacity</span><span class="val">📦 ${d.capacity}</span></div>
+      <div class="info-row"><span class="key">Crops Accepted</span><span class="val">🌾 ${d.crops}</span></div>
+      <div class="info-row"><span class="key">Rating</span><span class="val">${stars(d.rating)}</span></div>
+      <div class="info-row"><span class="key">Total Trips</span><span class="val">🚚 ${d.trips} completed</span></div>
+      <div class="info-row"><span class="key">Rate per km</span><span class="val" style="color:#1a6b2f">RWF ${d.rate.toLocaleString()} / km</span></div>
+      <div class="price-highlight">
+        ${fare
+          ? `<div style="font-size:.8rem;color:#666;margin-bottom:4px">Estimated fare for ${dist} km</div>
+             <div class="big">RWF ${fare.toLocaleString()}</div>
+             <div class="small">${pickup} → ${dest}</div>`
+          : `<div style="font-size:.8rem;color:#666;margin-bottom:4px">Rate per kilometer</div>
+             <div class="big">RWF ${d.rate.toLocaleString()}<span style="font-size:1rem;font-weight:400;color:#666">/km</span></div>
+             <div class="small">Search a route first to see your total fare</div>`}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="book-now-btn" ${d.available ? '' : 'disabled'} onclick="closeDetail();openBooking(${d.id})">
+        ${d.available ? '🚛 Book This Driver' : 'Driver Currently Unavailable'}
+      </button>
+    </div>`;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
+
+/* ══════════ BOOKING MODAL ══════════ */
+function openBooking(id) {
+  const d = DRIVERS.find(x => x.id === id);
+  const dist = calcResults['h']?.dist || calcResults['f']?.dist || 0;
+  const pickupVal = document.getElementById('h-pickup')?.value || document.getElementById('f-pickup')?.value || '';
+  const destVal   = document.getElementById('h-dest')?.value   || document.getElementById('f-dest')?.value   || '';
+  const fare = dist > 0 ? d.rate * dist : null;
+
+  document.getElementById('bookingContent').innerHTML = `
+    <div class="modal-header">
+      <h3>🚛 Book ${d.name}</h3>
+      <button class="modal-close" onclick="closeBooking()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">📍 Route Details</div>
+      <div class="bf-row">
+        <div class="booking-field">
+          <label>Pickup Location</label>
+          <input type="text" id="bk-pickup" value="${pickupVal}" placeholder="Farm address" />
+        </div>
+        <div class="booking-field">
+          <label>Destination</label>
+          <input type="text" id="bk-dest" value="${destVal}" placeholder="Market / buyer address" />
+        </div>
+      </div>
+      <div class="booking-field">
+        <label>Distance (auto-calculated)</label>
+        <input type="text" class="readonly-dist" readonly
+          value="${dist > 0 ? dist + ' km' : 'Search a route to auto-fill'}" />
+      </div>
+
+      <div class="section-title">📦 Package Details</div>
+      <div class="booking-field">
+        <label>Cargo Type</label>
+        <select id="bk-cargo" onchange="toggleCustomCargo('bk')">
+          <option value="">— Select crop / cargo —</option>
+          <optgroup label="Vegetables">
+            <option>Potatoes</option><option>Tomatoes</option><option>Onions</option>
+            <option>Cabbage</option><option>Carrots</option><option>Eggplant</option>
+          </optgroup>
+          <optgroup label="Fruits">
+            <option>Bananas</option><option>Avocados</option><option>Mangoes</option>
+            <option>Pineapples</option><option>Passion Fruit</option>
+          </optgroup>
+          <optgroup label="Grains &amp; Legumes">
+            <option>Maize / Corn</option><option>Beans</option><option>Sorghum</option>
+            <option>Rice</option><option>Wheat</option><option>Soybeans</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option>Livestock / Animals</option><option>Dairy Products</option>
+            <option>Coffee / Tea</option><option>Sugar Cane</option>
+            <option value="__custom__">✏️ Other (type your own…)</option>
+          </optgroup>
+        </select>
+        <input type="text" id="bk-cargo-custom" placeholder="e.g. Sweet potatoes, Cassava, Groundnuts…"
+          style="display:none;margin-top:6px" class="booking-field-input" />
+      </div>
+      <div class="bf-row">
+        <div class="booking-field">
+          <label>Amount / Quantity</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="bk-qty" placeholder="e.g. 500" min="1" style="flex:1;padding:0.6rem 0.9rem;border:1.5px solid #ddd;border-radius:8px;font-size:0.91rem;background:#fafaf8" />
+            <select id="bk-unit" style="width:90px;padding:0.6rem 0.4rem;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;background:#fafaf8">
+              <option>kg</option><option>pieces</option><option>bags</option><option>crates</option><option>tonnes</option>
+            </select>
+          </div>
+        </div>
+        <div class="booking-field">
+          <label>Packaging</label>
+          <select id="bk-pkg">
+            <option>Sacks / Bags</option>
+            <option>Crates / Boxes</option>
+            <option>Loose / Bulk</option>
+            <option>Palletized</option>
+            <option>Live Animals</option>
+          </select>
+        </div>
+      </div>
+      <div class="booking-field">
+        <label>Special Handling Instructions</label>
+        <textarea id="bk-notes" placeholder="e.g. Keep dry, fragile, refrigerate, handle with care…"></textarea>
+      </div>
+
+      <div class="section-title">🧾 Booking Summary</div>
+      <div class="summary-box">
+        <div class="sr"><span class="sk">Driver</span><span class="sv">${d.name}</span></div>
+        <div class="sr"><span class="sk">Vehicle</span><span class="sv">${d.vehicle}</span></div>
+        <div class="sr"><span class="sk">Distance</span><span class="sv">${dist > 0 ? dist + ' km' : 'N/A'}</span></div>
+        <div class="sr"><span class="sk">Rate</span><span class="sv">RWF ${d.rate.toLocaleString()} / km</span></div>
+        <div class="total">
+          <span>Estimated Total</span>
+          <span>${fare ? 'RWF ' + fare.toLocaleString() : '—'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="confirm-btn" onclick="confirmBooking(${d.id}, ${fare || 0})">✅ Confirm Booking</button>
+    </div>`;
+  document.getElementById('bookingModal').classList.add('open');
+}
+function closeBooking() { document.getElementById('bookingModal').classList.remove('open'); }
+
+function toggleCustomCargo(prefix) {
+  const sel = document.getElementById(prefix + '-cargo');
+  const custom = document.getElementById(prefix + '-cargo-custom');
+  if (!sel || !custom) return;
+  if (sel.value === '__custom__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+  }
+}
+
+function getCargoLabel(prefix) {
+  const sel = document.getElementById(prefix + '-cargo');
+  if (!sel) return '';
+  if (sel.value === '__custom__') {
+    return document.getElementById(prefix + '-cargo-custom')?.value || 'Custom cargo';
+  }
+  return sel.value;
+}
+
+function confirmBooking(driverId, fare) {
+  const d = DRIVERS.find(x => x.id === driverId);
+  const cargo = getCargoLabel('bk');
+  const qty   = document.getElementById('bk-qty')?.value || '';
+  const unit  = document.getElementById('bk-unit')?.value || 'kg';
+  const pkg   = document.getElementById('bk-pkg')?.value || '';
+  const qtyStr = qty ? `${qty} ${unit}` : '';
+  document.getElementById('bookingContent').innerHTML = `
+    <div class="modal-body">
+      <div class="success-msg">
+        <div class="check">✅</div>
+        <h3>Booking Confirmed!</h3>
+        <p>Driver <strong>${d.name}</strong> has been notified.</p>
+        <p style="margin-top:.5rem">📦 ${cargo || '—'}${qtyStr ? ' · ' + qtyStr : ''}${pkg ? ' · ' + pkg : ''}</p>
+        ${fare > 0 ? `<p style="color:#1a6b2f;font-size:1.15rem;font-weight:800;margin-top:.6rem">RWF ${fare.toLocaleString()}</p>` : ''}
+        <p style="color:#aaa;font-size:.8rem;margin-top:.3rem">Payment collected on delivery</p>
+        <button class="confirm-btn" style="margin-top:1.5rem" onclick="closeBooking()">Done</button>
+      </div>
+    </div>`;
+}
+
+// Init
+renderBrowse();
+</script>
+</body>
+</html>
