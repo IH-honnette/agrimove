@@ -59,12 +59,20 @@ export default function DriverProfileScreen({ route, navigation }) {
           <View style={styles.divider} />
 
           {driver.available ? (
-            <TouchableOpacity
-              style={styles.btnPrimary}
-              onPress={() => navigation.navigate('BookingForm', { driver })}
-            >
-              <Text style={styles.btnText}>Book This Driver</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.btnPrimary}
+                onPress={() => navigation.navigate('BookingForm', { driver })}
+              >
+                <Text style={styles.btnText}>Book This Driver</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnOutline}
+                onPress={() => navigation.navigate('PriceEstimator', { driver })}
+              >
+                <Text style={styles.btnOutlineText}>🧮  Estimate Cost</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <Text style={styles.unavailable}>This driver is currently unavailable.</Text>
           )}
@@ -107,5 +115,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border, marginBottom: spacing.xl },
   btnPrimary: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.md },
   btnText: { color: colors.white, fontWeight: '700', fontSize: fontSize.base },
+  btnOutline: { borderWidth: 2, borderColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.md },
+  btnOutlineText: { color: colors.primary, fontWeight: '700', fontSize: fontSize.base },
   unavailable: { textAlign: 'center', color: colors.textMuted, padding: spacing.md, marginBottom: spacing.md },
 });

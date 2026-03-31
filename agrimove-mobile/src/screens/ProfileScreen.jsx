@@ -50,6 +50,12 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.divider} />
 
+        <TouchableOpacity style={styles.bookingsBtn} onPress={() => navigation.navigate('MyBookings')}>
+          <Text style={styles.bookingsBtnText}>📋  My Bookings</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -81,6 +87,13 @@ const styles = StyleSheet.create({
   infoCard: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   infoLabel: { fontSize: fontSize.sm, color: colors.textMuted, fontWeight: '600' },
   infoValue: { fontSize: fontSize.sm, color: colors.text, fontWeight: '600' },
+  bookingsBtn: {
+    borderWidth: 2, borderColor: colors.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.xxxl, paddingVertical: spacing.lg,
+    marginTop: spacing.md,
+  },
+  bookingsBtnText: { color: colors.primary, fontWeight: '700', fontSize: fontSize.base },
   logoutBtn: {
     borderWidth: 2, borderColor: colors.error,
     borderRadius: radius.md,

@@ -9,6 +9,8 @@ import DriverProfileScreen from '../screens/DriverProfileScreen';
 import BookingFormScreen from '../screens/BookingFormScreen';
 import BookingConfirmedScreen from '../screens/BookingConfirmedScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import MyBookingsScreen from '../screens/MyBookingsScreen';
+import PriceEstimatorScreen from '../screens/PriceEstimatorScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +38,8 @@ export default function AppNavigator() {
             <Stack.Screen name="BookingForm" component={BookingFormScreen} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="BookingConfirmed" component={BookingConfirmedScreen} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="MyBookings" component={MyBookingsScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="PriceEstimator" component={PriceEstimatorScreen} options={{ animation: 'slide_from_right' }} />
           </>
         )}
       </Stack.Navigator>
