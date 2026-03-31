@@ -267,6 +267,50 @@ curl "http://localhost:3001/api/drivers?type=truck&available=true"
 
 ---
 
+## Mobile App (Android)
+
+A React Native (Expo) Android app in `agrimove-mobile/`.
+
+### Prerequisites
+
+- **Android Studio** with an Android emulator configured (API 33+ recommended)
+- **Node.js** v20+ and npm
+- The backend must be running on port 3001
+
+### Setup
+
+```bash
+cd agrimove-mobile
+npm install
+cp .env.example .env
+```
+
+The default `EXPO_PUBLIC_API_URL=http://10.0.2.2:3001/api` works for Android emulator (10.0.2.2 = your machine's localhost).
+
+### Running
+
+Start the backend first (Terminal 1):
+```bash
+cd backend && npm run dev
+```
+
+Start Expo (Terminal 2):
+```bash
+cd agrimove-mobile && npx expo start --android
+```
+
+Android Studio emulator must be running. Expo will install the app and launch it automatically.
+
+### App Flow
+
+1. **Sign Up** — create an account as a Customer (farmer/buyer) or Driver (transport provider)
+2. **Browse Drivers** — filter by vehicle type (Truck, Pickup, Van) or availability
+3. **View Profile** — tap any driver card to see a bottom sheet with stats and details
+4. **Book** — fill in pickup location, destination, cargo type, and your phone number
+5. **Call to Confirm** — see the driver's number and tap **Call Now** to dial directly
+
+---
+
 ## Troubleshooting
 
 **"Could not load drivers. Make sure the backend is running."**
