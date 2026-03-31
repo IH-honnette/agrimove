@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBooking } from '../api/driversApi';
 
-export default function BookingForm({ driver, onConfirm, onBack }) {
+export default function BookingForm({ driver, onConfirm, onBack, heroData }) {
   const [form, setForm] = useState({
     customer_name: '',
     customer_phone: '',
-    cargo_type: '',
-    pickup_location: '',
-    destination: '',
+    cargo_type: heroData?.cargo || '',
+    pickup_location: heroData?.pickup || '',
+    destination: heroData?.dest || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const fare = heroData ? driver.rate * heroData.dist : null;
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -63,6 +65,14 @@ export default function BookingForm({ driver, onConfirm, onBack }) {
             Destination *
             <input name="destination" value={form.destination} onChange={handleChange} required placeholder="Where to deliver" />
           </label>
+
+          {fare && (
+            <div className="booking-summary">
+              <p>Distance: <strong>{heroData.dist} km</strong></p>
+              <p>Rate: <strong>RWF {driver.rate.toLocaleString()} / km</strong></p>
+              <p style={{ marginTop: '10px', fontSize: '18px', color: 'var(--green-700)' }}>Total: <strong>RWF {fare.toLocaleString()}</strong></p>
+            </div>
+          )}
 
           {error && <p className="form-error">{error}</p>}
 

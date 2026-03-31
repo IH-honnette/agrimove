@@ -1,5 +1,6 @@
-export default function DriverProfile({ driver, onBook, onClose }) {
+export default function DriverProfile({ driver, onBook, onClose, heroData }) {
   if (!driver) return null;
+  const fare = heroData ? driver.rate * heroData.dist : null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -32,7 +33,7 @@ export default function DriverProfile({ driver, onBook, onClose }) {
           </div>
           <div className="stat">
             <span className="stat-value">RWF {driver.rate.toLocaleString()}</span>
-            <span className="stat-label">Per day</span>
+            <span className="stat-label">Per km</span>
           </div>
           <div className="stat">
             <span className="stat-value">{driver.capacity}</span>
@@ -40,9 +41,20 @@ export default function DriverProfile({ driver, onBook, onClose }) {
           </div>
         </div>
 
-        <div className="profile-section">
-          <h4>Carries</h4>
-          <p>{driver.crops}</p>
+        <div className="profile-section" style={{ background: 'var(--green-50)', padding: '16px', borderRadius: '12px', border: '1px solid var(--green-200)', marginBottom: '20px', textAlign: 'center' }}>
+          {fare ? (
+            <>
+              <div style={{ fontSize: '13px', color: 'var(--green-800)', marginBottom: '4px', fontWeight: '600' }}>Estimated Fare for {heroData.dist} km</div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--green-700)' }}>RWF {fare.toLocaleString()}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{heroData.pickupName} → {heroData.destName}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '13px', color: 'var(--green-800)', marginBottom: '4px', fontWeight: '600' }}>Rate per kilometer</div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--green-700)' }}>RWF {driver.rate.toLocaleString()}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Search a route on the home page to get an exact fare</div>
+            </>
+          )}
         </div>
 
         <div className="profile-section">

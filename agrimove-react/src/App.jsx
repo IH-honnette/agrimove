@@ -1,14 +1,53 @@
 import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { fetchDrivers } from './api/driversApi';
 import DriverCard from './components/DriverCard';
 import DriverProfile from './components/DriverProfile';
 import BookingForm from './components/BookingForm';
 import PhonePrompt from './components/PhonePrompt';
 import FilterBar from './components/FilterBar';
+import HeroSearch from './components/HeroSearch';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import './App.css';
 
-export default function App() {
-  const [view, setView] = useState('list'); // 'list' | 'book' | 'confirm'
+function Header() {
+  const { user, logout } = useAuth();
+  const initials = user ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '';
+
+  return (
+    <header className="app-header">
+      <div className="header-inner">
+        <div className="header-left">
+          <Link to="/" className="logo">
+            <span className="logo-icon">🚛</span>
+            <span className="logo-text">AgriMove</span>
+          </Link>
+          <p className="header-tagline">Connecting farmers with trusted transport</p>
+        </div>
+        <div className="header-right">
+          {user ? (
+            <div className="header-user">
+              <div className="user-avatar">{initials}</div>
+              <span className="user-name">{user.name}</span>
+              <button className="btn-logout" onClick={logout} id="logout-btn">Logout</button>
+            </div>
+          ) : (
+            <div className="header-auth-buttons">
+              <Link to="/login" className="btn-header-login" id="header-login-btn">Sign In</Link>
+              <Link to="/signup" className="btn-header-signup" id="header-signup-btn">Get Started</Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function DriversPage() {
+  const { user } = useAuth();
+  const [view, setView] = useState('list');
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,6 +55,7 @@ export default function App() {
   const [profileDriver, setProfileDriver] = useState(null);
   const [booking, setBooking] = useState(null);
   const [filters, setFilters] = useState({});
+  const [heroData, setHeroData] = useState(null);
 
   const loadDrivers = useCallback(async () => {
     setLoading(true);
@@ -37,6 +77,11 @@ export default function App() {
   }
 
   function handleBook(driver) {
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login';
+      return;
+    }
     setSelectedDriver(driver);
     setProfileDriver(null);
     setView('book');
@@ -54,32 +99,33 @@ export default function App() {
     loadDrivers();
   }
 
+  function handleHeroSearch(data) {
+    setHeroData(data);
+  }
+
   if (view === 'book') {
-    return <BookingForm driver={selectedDriver} onConfirm={handleConfirm} onBack={() => setView('list')} />;
+    return (
+      <>
+        <Header />
+        <BookingForm driver={selectedDriver} onConfirm={handleConfirm} onBack={() => setView('list')} heroData={heroData} />
+      </>
+    );
   }
 
   if (view === 'confirm') {
-    return <PhonePrompt booking={booking} onDone={handleDone} />;
+    return (
+      <>
+        <Header />
+        <PhonePrompt booking={booking} onDone={handleDone} />
+      </>
+    );
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-inner">
-          <div className="logo">
-            <span className="logo-icon">🚛</span>
-            <span className="logo-text">AgriMove</span>
-          </div>
-          <p className="header-tagline">Connecting farmers with trusted transport</p>
-        </div>
-      </header>
-
-      <main className="app-main">
-        <div className="section-title">
-          <h1>Available Drivers</h1>
-          <p>Browse verified agricultural transport providers across Rwanda</p>
-        </div>
-
+    <>
+      <Header />
+      <HeroSearch onSearch={handleHeroSearch} />
+      <main className="app-main" id="drivers-list">
         <FilterBar filters={filters} onChange={setFilters} />
 
         {loading && <div className="loading">Loading drivers…</div>}
@@ -90,7 +136,7 @@ export default function App() {
             <p className="results-count">{drivers.length} driver{drivers.length !== 1 ? 's' : ''} found</p>
             <div className="drivers-grid">
               {drivers.map(driver => (
-                <DriverCard key={driver.id} driver={driver} onSelect={handleSelectDriver} />
+                <DriverCard key={driver.id} driver={driver} onSelect={handleSelectDriver} heroData={heroData} />
               ))}
             </div>
             {drivers.length === 0 && (
@@ -104,7 +150,30 @@ export default function App() {
         driver={profileDriver}
         onBook={handleBook}
         onClose={() => setProfileDriver(null)}
+        heroData={heroData}
       />
-    </div>
+    </>
+  );
+}
+
+function AuthGuard({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="loading">Loading…</div>;
+  if (user) return <Navigate to="/" replace />;
+  return children;
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<DriversPage />} />
+          <Route path="/login" element={<AuthGuard><LoginPage /></AuthGuard>} />
+          <Route path="/signup" element={<AuthGuard><SignupPage /></AuthGuard>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
