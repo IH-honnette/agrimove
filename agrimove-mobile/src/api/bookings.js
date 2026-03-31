@@ -13,3 +13,11 @@ export async function createBooking(data, token) {
   if (!res.ok) throw new Error(json.error || 'Booking failed');
   return json;
 }
+
+export async function fetchMyBookings(token) {
+  const res = await fetch(`${BASE}/bookings/mine`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch bookings');
+  return res.json();
+}
