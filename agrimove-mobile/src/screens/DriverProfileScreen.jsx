@@ -32,9 +32,6 @@ export default function DriverProfileScreen({ route, navigation }) {
                 <View style={styles.tagBlue}>
                   <Text style={[styles.tagText, { color: '#0369a1' }]}>{driver.type}</Text>
                 </View>
-                <View style={styles.tagOrange}>
-                  <Text style={[styles.tagText, { color: '#c2410c' }]}>{driver.location}</Text>
-                </View>
                 <View style={driver.available ? styles.tagGreen : styles.tagRed}>
                   <Text style={[styles.tagText, { color: driver.available ? '#15803d' : '#be123c' }]}>
                     {driver.available ? 'Available' : 'Unavailable'}
@@ -100,7 +97,6 @@ const styles = StyleSheet.create({
   vehicle: { fontSize: fontSize.sm, color: colors.textMuted, marginBottom: spacing.sm },
   tags: { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
   tagBlue: { backgroundColor: '#e0f2fe', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  tagOrange: { backgroundColor: '#fff7ed', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagGreen: { backgroundColor: '#f0fdf4', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagRed: { backgroundColor: '#fff1f2', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagText: { fontSize: fontSize.xs, fontWeight: '600', textTransform: 'capitalize' },

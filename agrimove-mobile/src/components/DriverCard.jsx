@@ -19,9 +19,6 @@ export default function DriverCard({ driver, onPress }) {
           <View style={styles.tagBlue}>
             <Text style={styles.tagTextBlue}>{driver.type}</Text>
           </View>
-          <View style={styles.tagOrange}>
-            <Text style={styles.tagTextOrange}>{driver.location}</Text>
-          </View>
         </View>
       </View>
 
@@ -65,9 +62,7 @@ const styles = StyleSheet.create({
   vehicle: { fontSize: fontSize.xs, color: colors.textMuted, marginBottom: spacing.sm },
   tags: { flexDirection: 'row', gap: spacing.xs },
   tagBlue: { backgroundColor: '#e0f2fe', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  tagOrange: { backgroundColor: '#fff7ed', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagTextBlue: { fontSize: fontSize.xs, fontWeight: '600', color: '#0369a1', textTransform: 'capitalize' },
-  tagTextOrange: { fontSize: fontSize.xs, fontWeight: '600', color: '#c2410c' },
   meta: { alignItems: 'flex-end', gap: 3, flexShrink: 0 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotGreen: { backgroundColor: colors.success },
