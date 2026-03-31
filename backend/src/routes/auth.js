@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'agrimove_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
 
 function signToken(user) {
   return jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -18,11 +19,21 @@ router.post('/signup', async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
     if (role !== 'customer' && role !== 'driver') {
       return res.status(400).json({ error: 'Role must be customer or driver' });
     }
     if (role === 'driver' && (!vehicle || !type || !capacity || !location || !rate)) {
       return res.status(400).json({ error: 'Drivers must provide vehicle, type, capacity, location, and rate' });
+    }
+    if (role === 'driver' && isNaN(parseInt(rate, 10))) {
+      return res.status(400).json({ error: 'Rate must be a valid number' });
     }
     const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
@@ -50,6 +61,9 @@ router.post('/signup', async (req, res) => {
     res.status(201).json({ user, token });
   } catch (err) {
     await client.query('ROLLBACK');
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'An account with this email already exists' });
+    }
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
