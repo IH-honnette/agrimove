@@ -273,7 +273,7 @@ A React Native (Expo) Android app in `agrimove-mobile/`.
 
 ### Prerequisites
 
-- **Android Studio** with an Android emulator configured (API 33+ recommended)
+- **Xcode** with an iPhone simulator (iOS 16+ recommended)
 - **Node.js** v20+ and npm
 - The backend must be running on port 3001
 
@@ -285,7 +285,7 @@ npm install
 cp .env.example .env
 ```
 
-The default `EXPO_PUBLIC_API_URL=http://10.0.2.2:3001/api` works for Android emulator (10.0.2.2 = your machine's localhost).
+The default `EXPO_PUBLIC_API_URL=http://localhost:3001/api` works for iOS simulator.
 
 ### Running
 
@@ -296,10 +296,10 @@ cd backend && npm run dev
 
 Start Expo (Terminal 2):
 ```bash
-cd agrimove-mobile && npx expo start --android
+cd agrimove-mobile && npx expo start --ios
 ```
 
-Android Studio emulator must be running. Expo will install the app and launch it automatically.
+Xcode iPhone simulator must be running. Expo will install the app and launch it automatically.
 
 ### App Flow
 

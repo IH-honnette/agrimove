@@ -1,4 +1,4 @@
-const BASE = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3001/api';
+const BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export async function signup({ name, email, phone, password, role, vehicle, type, capacity, location, rate }) {
   const res = await fetch(`${BASE}/auth/signup`, {
