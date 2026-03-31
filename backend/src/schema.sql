@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS drivers (
 CREATE TABLE IF NOT EXISTS bookings (
   id SERIAL PRIMARY KEY,
   driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   customer_name VARCHAR(255) NOT NULL,
   customer_phone VARCHAR(50) NOT NULL,
   cargo_type VARCHAR(255),
