@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   phone VARCHAR(50),
-  role VARCHAR(50) DEFAULT 'customer',
   password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'customer',
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS drivers (
   location VARCHAR(255),
   crops VARCHAR(255),
   phone VARCHAR(50),
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
