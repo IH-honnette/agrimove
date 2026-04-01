@@ -121,17 +121,19 @@ export default function DriverListScreen({ navigation }) {
             active={availableOnly}
             onPress={() => setAvailableOnly(v => !v)}
           />
-          <TouchableOpacity
-            style={[styles.nearChip, nearMe && styles.nearChipActive]}
-            onPress={handleNearMe}
-            disabled={locationLoading}
-          >
-            {locationLoading
-              ? <ActivityIndicator size="small" color={nearMe ? colors.white : colors.primary} style={{ marginRight: 4 }} />
-              : <Text style={styles.nearChipIcon}>📍</Text>}
-            <Text style={[styles.nearChipText, nearMe && styles.nearChipTextActive]}>Near Me</Text>
-          </TouchableOpacity>
         </ScrollView>
+
+        {/* Near Me — full-width row below chips */}
+        <TouchableOpacity
+          style={[styles.nearChip, nearMe && styles.nearChipActive]}
+          onPress={handleNearMe}
+          disabled={locationLoading}
+        >
+          {locationLoading
+            ? <ActivityIndicator size="small" color={nearMe ? colors.white : colors.primary} style={{ marginRight: 4 }} />
+            : <Text style={styles.nearChipIcon}>📍</Text>}
+          <Text style={[styles.nearChipText, nearMe && styles.nearChipTextActive]}>Near Me</Text>
+        </TouchableOpacity>
       </View>
 
       {nearMe && (
@@ -200,10 +202,11 @@ const styles = StyleSheet.create({
   filterWrap: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border },
   filterBar: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   nearChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginHorizontal: spacing.lg, marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.primary,
-    backgroundColor: colors.white, marginRight: spacing.sm,
+    backgroundColor: colors.white,
   },
   nearChipActive: { backgroundColor: colors.primary },
   nearChipIcon: { fontSize: 13 },
