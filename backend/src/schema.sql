@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS drivers (
   crops VARCHAR(255),
   phone VARCHAR(50),
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  latitude DECIMAL(10,7),
+  longitude DECIMAL(10,7),
+  location_address TEXT,
+  location_updated_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
