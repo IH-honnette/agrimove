@@ -8,6 +8,7 @@ import BookingForm from './components/BookingForm';
 import PhonePrompt from './components/PhonePrompt';
 import FilterBar from './components/FilterBar';
 import HeroSearch from './components/HeroSearch';
+import DriverDashboard from './components/DriverDashboard';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import './App.css';
@@ -31,6 +32,9 @@ function Header() {
             <div className="header-user">
               <div className="user-avatar">{initials}</div>
               <span className="user-name">{user.name}</span>
+              {user.role === 'driver' && (
+                <span className="role-badge">Driver</span>
+              )}
               <button className="btn-logout" onClick={logout} id="logout-btn">Logout</button>
             </div>
           ) : (
@@ -46,7 +50,7 @@ function Header() {
 }
 
 function DriversPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [view, setView] = useState('list');
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,27 +65,21 @@ function DriversPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDrivers(filters);
+      const data = await fetchDrivers(filters, token);
       setDrivers(data);
     } catch (e) {
       setError('Could not load drivers. Make sure the backend is running.');
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, token]);
 
   useEffect(() => { loadDrivers(); }, [loadDrivers]);
 
-  function handleSelectDriver(driver) {
-    setProfileDriver(driver);
-  }
+  function handleSelectDriver(driver) { setProfileDriver(driver); }
 
   function handleBook(driver) {
-    if (!user) {
-      // Redirect to login if not authenticated
-      window.location.href = '/login';
-      return;
-    }
+    if (!user) { window.location.href = '/login'; return; }
     setSelectedDriver(driver);
     setProfileDriver(null);
     setView('book');
@@ -97,10 +95,6 @@ function DriversPage() {
     setBooking(null);
     setSelectedDriver(null);
     loadDrivers();
-  }
-
-  function handleHeroSearch(data) {
-    setHeroData(data);
   }
 
   if (view === 'book') {
@@ -124,12 +118,18 @@ function DriversPage() {
   return (
     <>
       <Header />
-      <HeroSearch onSearch={handleHeroSearch} />
+      <HeroSearch onSearch={setHeroData} />
       <main className="app-main" id="drivers-list">
         <FilterBar filters={filters} onChange={setFilters} />
 
+        {filters.lat != null && (
+          <div className="near-me-banner">
+            📍 Showing drivers within 50 km of your location · sorted by distance
+          </div>
+        )}
+
         {loading && <div className="loading">Loading drivers…</div>}
-        {error && <div className="error-msg">{error}</div>}
+        {error   && <div className="error-msg">{error}</div>}
 
         {!loading && !error && (
           <>
@@ -146,14 +146,25 @@ function DriversPage() {
         )}
       </main>
 
-      <DriverProfile
-        driver={profileDriver}
-        onBook={handleBook}
-        onClose={() => setProfileDriver(null)}
-        heroData={heroData}
-      />
+      <DriverProfile driver={profileDriver} onBook={handleBook} onClose={() => setProfileDriver(null)} heroData={heroData} />
     </>
   );
+}
+
+function DriverPage() {
+  return (
+    <>
+      <Header />
+      <DriverDashboard />
+    </>
+  );
+}
+
+function HomePage() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="loading">Loading…</div>;
+  if (user?.role === 'driver') return <DriverPage />;
+  return <DriversPage />;
 }
 
 function AuthGuard({ children }) {
@@ -168,8 +179,8 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<DriversPage />} />
-          <Route path="/login" element={<AuthGuard><LoginPage /></AuthGuard>} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login"  element={<AuthGuard><LoginPage /></AuthGuard>} />
           <Route path="/signup" element={<AuthGuard><SignupPage /></AuthGuard>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

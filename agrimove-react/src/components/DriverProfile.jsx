@@ -1,6 +1,12 @@
+function isLive(updatedAt) {
+  if (!updatedAt) return false;
+  return (Date.now() - new Date(updatedAt).getTime()) < 10 * 60 * 1000;
+}
+
 export default function DriverProfile({ driver, onBook, onClose, heroData }) {
   if (!driver) return null;
-  const fare = heroData ? driver.rate * heroData.dist : null;
+  const live = isLive(driver.location_updated_at);
+  const displayLocation = driver.location_address || driver.location || '—';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -14,10 +20,10 @@ export default function DriverProfile({ driver, onBook, onClose, heroData }) {
             <p className="profile-vehicle">{driver.vehicle}</p>
             <div className="profile-tags">
               <span className="tag tag-type">{driver.type}</span>
-              <span className="tag tag-location">{driver.location}</span>
               <span className={`tag ${driver.available ? 'tag-available' : 'tag-busy'}`}>
                 {driver.available ? 'Available' : 'Unavailable'}
               </span>
+              {live && <span className="tag tag-live">● Live</span>}
             </div>
           </div>
         </div>
@@ -32,34 +38,21 @@ export default function DriverProfile({ driver, onBook, onClose, heroData }) {
             <span className="stat-label">Trips</span>
           </div>
           <div className="stat">
-            <span className="stat-value">RWF {driver.rate.toLocaleString()}</span>
-            <span className="stat-label">Per km</span>
-          </div>
-          <div className="stat">
             <span className="stat-value">{driver.capacity}</span>
             <span className="stat-label">Capacity</span>
           </div>
-        </div>
-
-        <div className="profile-section" style={{ background: 'var(--green-50)', padding: '16px', borderRadius: '12px', border: '1px solid var(--green-200)', marginBottom: '20px', textAlign: 'center' }}>
-          {fare ? (
-            <>
-              <div style={{ fontSize: '13px', color: 'var(--green-800)', marginBottom: '4px', fontWeight: '600' }}>Estimated Fare for {heroData.dist} km</div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--green-700)' }}>RWF {fare.toLocaleString()}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{heroData.pickupName} → {heroData.destName}</div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: '13px', color: 'var(--green-800)', marginBottom: '4px', fontWeight: '600' }}>Rate per kilometer</div>
-              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--green-700)' }}>RWF {driver.rate.toLocaleString()}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Search a route on the home page to get an exact fare</div>
-            </>
+          {driver.distance_km != null && (
+            <div className="stat">
+              <span className="stat-value">{driver.distance_km} km</span>
+              <span className="stat-label">From you</span>
+            </div>
           )}
         </div>
 
-        <div className="profile-section">
-          <h4>Based in</h4>
-          <p>{driver.location}</p>
+        <div className="profile-section profile-location-section">
+          <h4>📍 Current Location</h4>
+          <p>{displayLocation}</p>
+          {live && <p className="live-label">● Live location · updated just now</p>}
         </div>
 
         {driver.available ? (

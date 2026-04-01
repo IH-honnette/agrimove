@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { createBooking } from '../api/driversApi';
 
+const BASE_PRICE = 1000;
+const RATE_PER_KM = 1500;
+
 export default function BookingForm({ driver, onConfirm, onBack, heroData }) {
+  const { user, token } = useAuth();
+  const estimatedPrice = heroData?.dist
+    ? Math.max(BASE_PRICE, Math.round(BASE_PRICE + RATE_PER_KM * heroData.dist))
+    : null;
+
   const [form, setForm] = useState({
-    customer_name: '',
-    customer_phone: '',
+    customer_name: user?.name || '',
+    customer_phone: user?.phone || '',
     cargo_type: heroData?.cargo || '',
     pickup_location: heroData?.pickup || '',
     destination: heroData?.dest || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const fare = heroData ? driver.rate * heroData.dist : null;
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -23,7 +30,7 @@ export default function BookingForm({ driver, onConfirm, onBack, heroData }) {
     setError(null);
     setLoading(true);
     try {
-      const booking = await createBooking({ driver_id: driver.id, ...form });
+      const booking = await createBooking({ driver_id: driver.id, ...form }, token);
       onConfirm(booking);
     } catch (err) {
       setError(err.message);
@@ -40,7 +47,7 @@ export default function BookingForm({ driver, onConfirm, onBack, heroData }) {
           <div className="form-avatar">{driver.initials}</div>
           <div>
             <h2>Book {driver.name}</h2>
-            <p className="form-sub">{driver.vehicle} · {driver.location}</p>
+            <p className="form-sub">{driver.vehicle} · {driver.location_address || driver.location}</p>
           </div>
         </div>
 
@@ -66,11 +73,14 @@ export default function BookingForm({ driver, onConfirm, onBack, heroData }) {
             <input name="destination" value={form.destination} onChange={handleChange} required placeholder="Where to deliver" />
           </label>
 
-          {fare && (
+          {estimatedPrice && (
             <div className="booking-summary">
               <p>Distance: <strong>{heroData.dist} km</strong></p>
-              <p>Rate: <strong>RWF {driver.rate.toLocaleString()} / km</strong></p>
-              <p style={{ marginTop: '10px', fontSize: '18px', color: 'var(--green-700)' }}>Total: <strong>RWF {fare.toLocaleString()}</strong></p>
+              <p>Base fee: <strong>RWF {BASE_PRICE.toLocaleString()}</strong></p>
+              <p>Per km: <strong>RWF {RATE_PER_KM.toLocaleString()}</strong></p>
+              <p style={{ marginTop: '10px', fontSize: '18px', color: 'var(--green-700)' }}>
+                Estimated total: <strong>RWF {estimatedPrice.toLocaleString()}</strong>
+              </p>
             </div>
           )}
 

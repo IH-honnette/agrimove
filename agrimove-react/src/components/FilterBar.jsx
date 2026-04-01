@@ -1,10 +1,37 @@
-const LOCATIONS = ['All', 'Kigali', 'Musanze', 'Huye', 'Rubavu', 'Nyanza', 'Muhanga', 'Rwamagana', 'Kayonza'];
+import { useState } from 'react';
+
 const TYPES = ['All', 'truck', 'pickup', 'van'];
 
 export default function FilterBar({ filters, onChange }) {
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState(null);
+
   function set(key, value) {
     onChange({ ...filters, [key]: value });
   }
+
+  async function handleNearMe() {
+    if (filters.lat != null) {
+      // toggle off
+      const { lat, lng, radius, ...rest } = filters;
+      onChange(rest);
+      return;
+    }
+    setLocLoading(true);
+    setLocError(null);
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
+      );
+      onChange({ ...filters, lat: pos.coords.latitude, lng: pos.coords.longitude, radius: 50 });
+    } catch {
+      setLocError('Could not get your location. Enable location access and try again.');
+    } finally {
+      setLocLoading(false);
+    }
+  }
+
+  const nearMeActive = filters.lat != null;
 
   return (
     <div className="filter-bar">
@@ -24,15 +51,6 @@ export default function FilterBar({ filters, onChange }) {
       </div>
 
       <div className="filter-group">
-        <label>Location</label>
-        <select value={filters.location || ''} onChange={e => set('location', e.target.value)}>
-          {LOCATIONS.map(l => (
-            <option key={l} value={l === 'All' ? '' : l}>{l}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="filter-group">
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -41,6 +59,18 @@ export default function FilterBar({ filters, onChange }) {
           />
           Available only
         </label>
+      </div>
+
+      <div className="filter-group">
+        <button
+          className={`filter-btn near-me-btn ${nearMeActive ? 'active' : ''}`}
+          onClick={handleNearMe}
+          disabled={locLoading}
+        >
+          {locLoading ? '⏳ Locating…' : nearMeActive ? '📍 Near Me ✕' : '📍 Near Me'}
+        </button>
+        {nearMeActive && <span className="near-me-note">Drivers within 50 km · sorted by distance</span>}
+        {locError && <span className="filter-error">{locError}</span>}
       </div>
     </div>
   );
