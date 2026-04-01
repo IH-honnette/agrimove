@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -10,6 +10,21 @@ import { createBooking } from '../api/bookings';
 import { colors, spacing, radius, fontSize } from '../theme';
 
 const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || '';
+const BASE_PRICE = 1000;
+const RATE_PER_KM = 1500;
+
+async function fetchDistance(originPlaceId, destinationPlaceId) {
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=place_id:${originPlaceId}&destinations=place_id:${destinationPlaceId}&units=metric&key=${GOOGLE_KEY}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  const element = json.rows?.[0]?.elements?.[0];
+  if (!element || element.status !== 'OK') throw new Error('Could not calculate distance');
+  return {
+    distanceText: element.distance.text,
+    distanceKm: element.distance.value / 1000,
+    durationText: element.duration.text,
+  };
+}
 
 export default function BookingFormScreen({ route, navigation }) {
   const { driver } = route.params;
@@ -19,11 +34,33 @@ export default function BookingFormScreen({ route, navigation }) {
   const destRef = useRef(null);
 
   const [pickupLocation, setPickupLocation] = useState('');
+  const [pickupPlaceId, setPickupPlaceId] = useState(null);
   const [destination, setDestination] = useState('');
+  const [destPlaceId, setDestPlaceId] = useState(null);
   const [cargoType, setCargoType] = useState('');
   const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
+
+  const [estimate, setEstimate] = useState(null);
+  const [estimating, setEstimating] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Auto-calculate distance whenever both place IDs are set
+  useEffect(() => {
+    if (!pickupPlaceId || !destPlaceId) { setEstimate(null); return; }
+    let cancelled = false;
+    setEstimating(true);
+    fetchDistance(pickupPlaceId, destPlaceId)
+      .then(({ distanceText, distanceKm, durationText }) => {
+        if (cancelled) return;
+        const price = Math.max(BASE_PRICE, Math.round(BASE_PRICE + RATE_PER_KM * distanceKm));
+        setEstimate({ distanceText, distanceKm, durationText, price });
+      })
+      .catch(() => { if (!cancelled) setEstimate(null); })
+      .finally(() => { if (!cancelled) setEstimating(false); });
+    return () => { cancelled = true; };
+  }, [pickupPlaceId, destPlaceId]);
 
   async function handleBook() {
     if (!pickupLocation.trim() || !destination.trim() || !customerPhone.trim()) {
@@ -71,9 +108,7 @@ export default function BookingFormScreen({ route, navigation }) {
       },
       listView: {
         position: 'absolute',
-        top: 52,
-        left: 0,
-        right: 0,
+        top: 52, left: 0, right: 0,
         backgroundColor: colors.white,
         borderRadius: radius.md,
         borderWidth: 1,
@@ -92,7 +127,7 @@ export default function BookingFormScreen({ route, navigation }) {
   }
 
   const commonProps = {
-    fetchDetails: false,
+    fetchDetails: true,
     enablePoweredByContainer: false,
     query: { key: GOOGLE_KEY, language: 'en', components: 'country:rw' },
     textInputProps: { placeholderTextColor: colors.textMuted },
@@ -125,7 +160,10 @@ export default function BookingFormScreen({ route, navigation }) {
             <GooglePlacesAutocomplete
               ref={pickupRef}
               placeholder="Where to pick up your cargo"
-              onPress={(data) => setPickupLocation(data.description)}
+              onPress={(data) => {
+                setPickupLocation(data.description);
+                setPickupPlaceId(data.place_id);
+              }}
               styles={autocompleteStyles(20)}
               {...commonProps}
             />
@@ -136,13 +174,41 @@ export default function BookingFormScreen({ route, navigation }) {
             <GooglePlacesAutocomplete
               ref={destRef}
               placeholder="Where to deliver"
-              onPress={(data) => setDestination(data.description)}
+              onPress={(data) => {
+                setDestination(data.description);
+                setDestPlaceId(data.place_id);
+              }}
               styles={autocompleteStyles(10)}
               {...commonProps}
             />
           </View>
 
-          <Text style={[styles.label, { marginTop: spacing.xl }]}>Cargo Type</Text>
+          {/* Inline estimate — appears automatically once both locations are chosen */}
+          {estimating ? (
+            <View style={styles.estimateCard}>
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={styles.estimateLoading}>Calculating distance…</Text>
+            </View>
+          ) : estimate ? (
+            <View style={styles.estimateCard}>
+              <View style={styles.estimateRow}>
+                <Text style={styles.estimateLabel}>Distance</Text>
+                <Text style={styles.estimateValue}>{estimate.distanceText}</Text>
+              </View>
+              <View style={styles.estimateDivider} />
+              <View style={styles.estimateRow}>
+                <Text style={styles.estimateLabel}>Drive time</Text>
+                <Text style={styles.estimateValue}>{estimate.durationText}</Text>
+              </View>
+              <View style={styles.estimateDivider} />
+              <View style={styles.estimateRow}>
+                <Text style={styles.estimateLabel}>Est. transport fee</Text>
+                <Text style={styles.estimatePrice}>RWF {estimate.price.toLocaleString()}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <Text style={[styles.label, { marginTop: spacing.lg }]}>Cargo Type</Text>
           <TextInput
             style={styles.input}
             value={cargoType}
@@ -191,6 +257,23 @@ const styles = StyleSheet.create({
   bannerSub: { fontSize: fontSize.sm, color: colors.primaryDark, marginTop: 2 },
   label: { fontSize: fontSize.xs, fontWeight: '600', color: colors.textMuted, marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 },
   acWrap: { height: 48, marginBottom: spacing.sm },
+  estimateCard: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  estimateLoading: { fontSize: fontSize.sm, color: colors.primary, marginLeft: spacing.sm },
+  estimateRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+  estimateDivider: { width: '100%', height: 1, backgroundColor: colors.border },
+  estimateLabel: { fontSize: fontSize.sm, color: colors.textMuted, fontWeight: '600' },
+  estimateValue: { fontSize: fontSize.sm, color: colors.text, fontWeight: '700' },
+  estimatePrice: { fontSize: fontSize.base, color: colors.primary, fontWeight: '800' },
   input: { backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, fontSize: fontSize.base, color: colors.text, marginBottom: spacing.lg },
   error: { backgroundColor: colors.errorLight, color: colors.error, padding: spacing.md, borderRadius: radius.sm, marginBottom: spacing.lg, fontSize: fontSize.sm },
   btnPrimary: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.sm },
