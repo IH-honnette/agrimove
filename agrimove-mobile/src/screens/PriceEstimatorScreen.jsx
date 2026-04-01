@@ -8,8 +8,8 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import { colors, spacing, radius, fontSize } from '../theme';
 
 const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || '';
-const DEFAULT_RATE_PER_KM = 60; // RWF per km when no driver selected
-const ASSUMED_DAILY_KM = 250;   // km a driver covers per day (rate basis)
+const DEFAULT_RATE_PER_KM = 60;
+const ASSUMED_DAILY_KM = 250;
 
 async function fetchDistance(originPlaceId, destinationPlaceId) {
   const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=place_id:${originPlaceId}&destinations=place_id:${destinationPlaceId}&units=metric&key=${GOOGLE_KEY}`;
@@ -73,6 +73,7 @@ export default function PriceEstimatorScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.back}>← Back</Text>
@@ -81,11 +82,12 @@ export default function PriceEstimatorScreen({ route, navigation }) {
           <View style={{ width: 60 }} />
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-        >
+        {/*
+          GooglePlacesAutocomplete renders a FlatList internally.
+          It MUST NOT be nested inside a ScrollView — keep everything in a plain View.
+        */}
+        <View style={styles.content}>
+          {/* Driver or generic banner */}
           {driver ? (
             <View style={styles.driverBanner}>
               <View style={styles.driverAvatar}>
@@ -93,16 +95,16 @@ export default function PriceEstimatorScreen({ route, navigation }) {
               </View>
               <View>
                 <Text style={styles.driverName}>{driver.name}</Text>
-                <Text style={styles.driverRate}>RWF {Number(driver.rate).toLocaleString()}/day · ~RWF {Math.round(ratePerKm)}/km</Text>
+                <Text style={styles.driverVehicle}>{driver.vehicle}</Text>
               </View>
             </View>
           ) : (
             <View style={styles.infoBanner}>
               <Text style={styles.infoText}>Estimate transport cost for any route</Text>
-              <Text style={styles.infoSub}>Using standard rate of RWF {DEFAULT_RATE_PER_KM}/km</Text>
             </View>
           )}
 
+          {/* Pickup — outside ScrollView, FlatList renders freely */}
           <Text style={styles.label}>Pickup Location</Text>
           <View style={styles.autocompleteWrap}>
             <GooglePlacesAutocomplete
@@ -116,8 +118,9 @@ export default function PriceEstimatorScreen({ route, navigation }) {
             />
           </View>
 
-          <Text style={[styles.label, { marginTop: spacing.md }]}>Destination</Text>
-          <View style={styles.autocompleteWrap}>
+          {/* Destination */}
+          <Text style={styles.label}>Destination</Text>
+          <View style={[styles.autocompleteWrap, { zIndex: 9 }]}>
             <GooglePlacesAutocomplete
               ref={destRef}
               placeholder="Search destination..."
@@ -141,40 +144,43 @@ export default function PriceEstimatorScreen({ route, navigation }) {
               : <Text style={styles.calcBtnText}>Calculate Distance & Price</Text>}
           </TouchableOpacity>
 
+          {/* Result card — safe to scroll here, no FlatList inside */}
           {result ? (
-            <View style={styles.resultCard}>
-              <Text style={styles.resultTitle}>Estimate</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <View style={styles.resultCard}>
+                <Text style={styles.resultTitle}>Estimate</Text>
 
-              <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Distance</Text>
-                <Text style={styles.resultValue}>{result.distanceText}</Text>
-              </View>
-              <View style={styles.resultDivider} />
-              <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Driving time</Text>
-                <Text style={styles.resultValue}>{result.durationText}</Text>
-              </View>
-              <View style={styles.resultDivider} />
-              <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Estimated cost</Text>
-                <Text style={styles.resultPrice}>RWF {result.estimatedPrice.toLocaleString()}</Text>
-              </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Distance</Text>
+                  <Text style={styles.resultValue}>{result.distanceText}</Text>
+                </View>
+                <View style={styles.resultDivider} />
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Driving time</Text>
+                  <Text style={styles.resultValue}>{result.durationText}</Text>
+                </View>
+                <View style={styles.resultDivider} />
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Estimated cost</Text>
+                  <Text style={styles.resultPrice}>RWF {result.estimatedPrice.toLocaleString()}</Text>
+                </View>
 
-              <Text style={styles.disclaimer}>
-                * Estimate based on {driver ? `${driver.name}'s rate` : 'standard rate'}. Actual price is agreed with the driver.
-              </Text>
+                <Text style={styles.disclaimer}>
+                  * Estimate only. Actual price is agreed with the driver.
+                </Text>
 
-              {driver ? (
-                <TouchableOpacity
-                  style={styles.bookBtn}
-                  onPress={() => navigation.navigate('BookingForm', { driver })}
-                >
-                  <Text style={styles.bookBtnText}>Book This Driver</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+                {driver ? (
+                  <TouchableOpacity
+                    style={styles.bookBtn}
+                    onPress={() => navigation.navigate('BookingForm', { driver })}
+                  >
+                    <Text style={styles.bookBtnText}>Book This Driver</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </ScrollView>
           ) : null}
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -188,7 +194,7 @@ const styles = StyleSheet.create({
   },
   back: { color: colors.primary, fontSize: fontSize.base, fontWeight: '600', width: 60 },
   title: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
-  container: { padding: spacing.xl, paddingBottom: 80 },
+  content: { flex: 1, padding: spacing.xl },
   driverBanner: {
     flexDirection: 'row', gap: spacing.md, alignItems: 'center',
     backgroundColor: colors.primaryLight, borderRadius: radius.lg,
@@ -197,13 +203,12 @@ const styles = StyleSheet.create({
   driverAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#bae6fd', alignItems: 'center', justifyContent: 'center' },
   driverInitials: { fontSize: fontSize.base, fontWeight: '700', color: '#0369a1' },
   driverName: { fontSize: fontSize.base, fontWeight: '700', color: colors.text },
-  driverRate: { fontSize: fontSize.xs, color: colors.primaryDark, marginTop: 2 },
+  driverVehicle: { fontSize: fontSize.xs, color: colors.primaryDark, marginTop: 2 },
   infoBanner: {
     backgroundColor: colors.bg, borderRadius: radius.md,
     padding: spacing.lg, marginBottom: spacing.xl, alignItems: 'center',
   },
   infoText: { fontSize: fontSize.base, fontWeight: '600', color: colors.text },
-  infoSub: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4 },
   label: { fontSize: fontSize.xs, fontWeight: '600', color: colors.textMuted, marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 },
   autocompleteWrap: { zIndex: 10, marginBottom: spacing.lg },
   autocompleteInput: {
@@ -215,7 +220,7 @@ const styles = StyleSheet.create({
   dropdownRow: { padding: spacing.md },
   dropdownText: { fontSize: fontSize.sm, color: colors.text },
   error: { backgroundColor: colors.errorLight, color: colors.error, padding: spacing.md, borderRadius: radius.sm, marginBottom: spacing.lg, fontSize: fontSize.sm },
-  calcBtn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.xl },
+  calcBtn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.lg },
   calcBtnDisabled: { backgroundColor: colors.border },
   calcBtnText: { color: colors.white, fontWeight: '700', fontSize: fontSize.base },
   resultCard: {
