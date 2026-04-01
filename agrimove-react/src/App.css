@@ -898,6 +898,63 @@
 }
 .btn-call-small:hover { background: #15803d; }
 
+/* ── Booking Form ─────────────────────────────── */
+.places-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-color, #d1d5db);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+  background: white;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.places-input:focus { border-color: var(--green-600, #16a34a); }
+
+.estimate-card {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.estimate-card.estimate-loading {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: var(--text-secondary, #6b7280);
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.estimate-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid #d1fae5;
+  border-top-color: #16a34a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.estimate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  gap: 12px;
+}
+.estimate-label { font-size: 13px; color: var(--text-secondary, #6b7280); }
+.estimate-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.estimate-divider { height: 1px; background: #dcfce7; margin: 0; }
+.estimate-divider-bold { height: 2px; background: #86efac; }
+.estimate-total-label { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.estimate-total { font-size: 18px; font-weight: 800; color: #15803d; }
+
 /* ── Responsive ───────────────────────────────── */
 @media (max-width: 768px) {
   .header-inner {
