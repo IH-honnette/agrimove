@@ -47,7 +47,7 @@ export default function DriverProfileScreen({ route, navigation }) {
               { val: String(driver.rating), lbl: 'Rating' },
               { val: String(driver.trips), lbl: 'Trips' },
               { val: driver.capacity, lbl: 'Capacity' },
-              { val: `${Number(driver.rate).toLocaleString()}`, lbl: 'RWF/day' },
+              { val: driver.location || '—', lbl: 'Location' },
             ].map(s => (
               <View key={s.lbl} style={styles.stat}>
                 <Text style={styles.statVal}>{s.val}</Text>

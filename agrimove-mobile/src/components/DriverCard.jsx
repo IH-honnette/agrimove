@@ -24,8 +24,7 @@ export default function DriverCard({ driver, onPress }) {
 
       <View style={styles.meta}>
         <View style={[styles.dot, driver.available ? styles.dotGreen : styles.dotRed]} />
-        <Text style={styles.rate}>RWF {Number(driver.rate).toLocaleString()}</Text>
-        <Text style={styles.rateUnit}>/day</Text>
+        <Text style={styles.location} numberOfLines={1}>📍 {driver.location}</Text>
         <Text style={styles.rating}>⭐ {driver.rating}</Text>
       </View>
     </TouchableOpacity>
@@ -67,7 +66,6 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotGreen: { backgroundColor: colors.success },
   dotRed: { backgroundColor: colors.error },
-  rate: { fontSize: fontSize.sm, fontWeight: '700', color: colors.primary },
-  rateUnit: { fontSize: fontSize.xs, color: colors.textMuted },
+  location: { fontSize: fontSize.xs, color: colors.textMuted, maxWidth: 90 },
   rating: { fontSize: fontSize.xs, color: '#92400e' },
 });
