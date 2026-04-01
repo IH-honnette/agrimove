@@ -1,15 +1,15 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { colors, spacing, radius, fontSize } from '../theme';
 
 const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || '';
-const DEFAULT_RATE_PER_KM = 60;
-const ASSUMED_DAILY_KM = 250;
+const BASE_PRICE = 1000;
+const RATE_PER_KM = 1500;
 
 async function fetchDistance(originPlaceId, destinationPlaceId) {
   const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=place_id:${originPlaceId}&destinations=place_id:${destinationPlaceId}&units=metric&key=${GOOGLE_KEY}`;
@@ -26,7 +26,6 @@ async function fetchDistance(originPlaceId, destinationPlaceId) {
 
 export default function PriceEstimatorScreen({ route, navigation }) {
   const driver = route.params?.driver || null;
-  const ratePerKm = driver ? driver.rate / ASSUMED_DAILY_KM : DEFAULT_RATE_PER_KM;
 
   const pickupRef = useRef(null);
   const destRef = useRef(null);
@@ -47,7 +46,7 @@ export default function PriceEstimatorScreen({ route, navigation }) {
     setLoading(true);
     try {
       const { distanceText, distanceKm, durationText } = await fetchDistance(originPlaceId, destPlaceId);
-      const estimatedPrice = Math.round(ratePerKm * distanceKm);
+      const estimatedPrice = Math.max(BASE_PRICE, Math.round(BASE_PRICE + RATE_PER_KM * distanceKm));
       setResult({ distanceText, distanceKm, durationText, estimatedPrice });
     } catch (e) {
       setError(e.message);
@@ -119,11 +118,7 @@ export default function PriceEstimatorScreen({ route, navigation }) {
           <View style={{ width: 60 }} />
         </View>
 
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.container}>
           {/* Driver / generic banner */}
           {driver ? (
             <View style={styles.driverBanner}>
@@ -222,7 +217,7 @@ export default function PriceEstimatorScreen({ route, navigation }) {
               ) : null}
             </View>
           ) : null}
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -236,7 +231,7 @@ const styles = StyleSheet.create({
   },
   back: { color: colors.primary, fontSize: fontSize.base, fontWeight: '600', width: 60 },
   title: { fontSize: fontSize.md, fontWeight: '700', color: colors.text },
-  container: { padding: spacing.xl, paddingBottom: 60 },
+  container: { flex: 1, padding: spacing.xl },
   driverBanner: {
     flexDirection: 'row', gap: spacing.md, alignItems: 'center',
     backgroundColor: colors.primaryLight, borderRadius: radius.lg,
