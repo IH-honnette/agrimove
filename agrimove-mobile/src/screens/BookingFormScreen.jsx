@@ -14,15 +14,15 @@ const BASE_PRICE = 1000;
 const RATE_PER_KM = 1500;
 
 async function fetchDistance(originPlaceId, destinationPlaceId) {
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=place_id:${originPlaceId}&destinations=place_id:${destinationPlaceId}&units=metric&key=${GOOGLE_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=place_id:${originPlaceId}&destination=place_id:${destinationPlaceId}&units=metric&key=${GOOGLE_KEY}`;
   const res = await fetch(url);
   const json = await res.json();
-  const element = json.rows?.[0]?.elements?.[0];
-  if (!element || element.status !== 'OK') throw new Error('Could not calculate distance');
+  if (json.status !== 'OK' || !json.routes?.length) throw new Error('Could not calculate distance');
+  const leg = json.routes[0].legs[0];
   return {
-    distanceText: element.distance.text,
-    distanceKm: element.distance.value / 1000,
-    durationText: element.duration.text,
+    distanceText: leg.distance.text,
+    distanceKm: leg.distance.value / 1000,
+    durationText: leg.duration.text,
   };
 }
 
