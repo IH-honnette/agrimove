@@ -1,6 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
+import { updateDriverLocation, clearDriverLocation } from '../api/drivers';
 import { colors, spacing, radius, fontSize } from '../theme';
 
 function getInitials(name) {
@@ -8,17 +11,92 @@ function getInitials(name) {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+function buildAddress(geo) {
+  const parts = [geo.street, geo.district, geo.city || geo.subregion].filter(Boolean);
+  return parts.join(', ') || geo.region || 'Unknown location';
+}
+
 export default function ProfileScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
+  const isDriver = user?.role === 'driver';
+
+  const [sharing, setSharing] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const watchRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (watchRef.current) watchRef.current.remove();
+    };
+  }, []);
+
+  async function startSharing() {
+    setLocationLoading(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Location permission denied. Enable it in Settings.');
+        setLocationLoading(false);
+        return;
+      }
+
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      await sendLocation(pos.coords);
+
+      watchRef.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 50 },
+        async (pos) => { await sendLocation(pos.coords); }
+      );
+
+      setSharing(true);
+    } catch (e) {
+      setLocationError('Could not start location tracking.');
+    } finally {
+      setLocationLoading(false);
+    }
+  }
+
+  async function sendLocation(coords) {
+    try {
+      const [geo] = await Location.reverseGeocodeAsync(
+        { latitude: coords.latitude, longitude: coords.longitude }
+      );
+      const address = geo ? buildAddress(geo) : null;
+      setCurrentAddress(address);
+      await updateDriverLocation(coords.latitude, coords.longitude, address, token);
+    } catch {
+      // Non-fatal — keep watching even if one update fails
+    }
+  }
+
+  async function stopSharing() {
+    if (watchRef.current) {
+      watchRef.current.remove();
+      watchRef.current = null;
+    }
+    setSharing(false);
+    setCurrentAddress(null);
+    try { await clearDriverLocation(token); } catch { /* ignore */ }
+  }
+
+  async function handleToggle(value) {
+    if (value) {
+      await startSharing();
+    } else {
+      await stopSharing();
+    }
+  }
 
   async function handleLogout() {
+    await stopSharing();
     await logout();
-    // AppNavigator automatically switches to AuthStack when user becomes null
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Back</Text>
@@ -28,7 +106,6 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <View style={styles.container}>
-        {/* Avatar */}
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
         </View>
@@ -47,6 +124,43 @@ export default function ProfileScreen({ navigation }) {
               : '—'}
           </Text>
         </View>
+
+        {isDriver && (
+          <>
+            <View style={styles.divider} />
+
+            <View style={styles.locationCard}>
+              <View style={styles.locationTop}>
+                <View style={styles.locationLeft}>
+                  <Text style={styles.locationTitle}>Share My Location</Text>
+                  <Text style={styles.locationSub}>
+                    {sharing ? 'Customers can see you on the map' : 'Your location is hidden'}
+                  </Text>
+                </View>
+                {locationLoading
+                  ? <ActivityIndicator color={colors.primary} />
+                  : <Switch
+                      value={sharing}
+                      onValueChange={handleToggle}
+                      trackColor={{ false: colors.border, true: colors.primary }}
+                      thumbColor={colors.white}
+                    />
+                }
+              </View>
+
+              {sharing && currentAddress ? (
+                <View style={styles.liveAddress}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.liveText} numberOfLines={2}>{currentAddress}</Text>
+                </View>
+              ) : null}
+
+              {locationError ? (
+                <Text style={styles.locationError}>{locationError}</Text>
+              ) : null}
+            </View>
+          </>
+        )}
 
         <View style={styles.divider} />
 
@@ -87,18 +201,23 @@ const styles = StyleSheet.create({
   infoCard: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   infoLabel: { fontSize: fontSize.sm, color: colors.textMuted, fontWeight: '600' },
   infoValue: { fontSize: fontSize.sm, color: colors.text, fontWeight: '600' },
+  locationCard: { width: '100%', backgroundColor: colors.bg, borderRadius: radius.md, padding: spacing.lg },
+  locationTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  locationLeft: { flex: 1, marginRight: spacing.md },
+  locationTitle: { fontSize: fontSize.base, fontWeight: '700', color: colors.text },
+  locationSub: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  liveAddress: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md, gap: spacing.sm },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success, flexShrink: 0 },
+  liveText: { flex: 1, fontSize: fontSize.sm, color: colors.text },
+  locationError: { marginTop: spacing.sm, fontSize: fontSize.xs, color: colors.error },
   bookingsBtn: {
-    borderWidth: 2, borderColor: colors.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.xxxl, paddingVertical: spacing.lg,
-    marginTop: spacing.md,
+    borderWidth: 2, borderColor: colors.primary, borderRadius: radius.md,
+    paddingHorizontal: spacing.xxxl, paddingVertical: spacing.lg, marginTop: spacing.md,
   },
   bookingsBtnText: { color: colors.primary, fontWeight: '700', fontSize: fontSize.base },
   logoutBtn: {
-    borderWidth: 2, borderColor: colors.error,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.xxxl, paddingVertical: spacing.lg,
-    marginTop: spacing.md,
+    borderWidth: 2, borderColor: colors.error, borderRadius: radius.md,
+    paddingHorizontal: spacing.xxxl, paddingVertical: spacing.lg, marginTop: spacing.md,
   },
   logoutText: { color: colors.error, fontWeight: '700', fontSize: fontSize.base },
 });

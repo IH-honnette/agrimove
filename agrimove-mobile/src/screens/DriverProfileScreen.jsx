@@ -47,13 +47,29 @@ export default function DriverProfileScreen({ route, navigation }) {
               { val: String(driver.rating), lbl: 'Rating' },
               { val: String(driver.trips), lbl: 'Trips' },
               { val: driver.capacity, lbl: 'Capacity' },
-              { val: driver.location || '—', lbl: 'Location' },
             ].map(s => (
               <View key={s.lbl} style={styles.stat}>
                 <Text style={styles.statVal}>{s.val}</Text>
                 <Text style={styles.statLbl}>{s.lbl}</Text>
               </View>
             ))}
+          </View>
+
+          {/* Location row */}
+          <View style={styles.locationRow}>
+            <Text style={styles.locationIcon}>📍</Text>
+            <View style={styles.locationInfo}>
+              <Text style={styles.locationAddress} numberOfLines={2}>
+                {driver.location_address || driver.location || '—'}
+              </Text>
+              {driver.location_updated_at &&
+                (Date.now() - new Date(driver.location_updated_at).getTime()) < 10 * 60 * 1000 && (
+                <View style={styles.liveRow}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.liveLabel}>Live location</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           <View style={styles.divider} />
@@ -118,4 +134,11 @@ const styles = StyleSheet.create({
   btnOutline: { borderWidth: 2, borderColor: colors.primary, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.md },
   btnOutlineText: { color: colors.primary, fontWeight: '700', fontSize: fontSize.base },
   unavailable: { textAlign: 'center', color: colors.textMuted, padding: spacing.md, marginBottom: spacing.md },
+  locationRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', marginBottom: spacing.xl, paddingHorizontal: spacing.xs },
+  locationIcon: { fontSize: 18, marginTop: 2 },
+  locationInfo: { flex: 1 },
+  locationAddress: { fontSize: fontSize.sm, color: colors.text, lineHeight: 20 },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 4 },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.success },
+  liveLabel: { fontSize: fontSize.xs, color: colors.success, fontWeight: '600' },
 });

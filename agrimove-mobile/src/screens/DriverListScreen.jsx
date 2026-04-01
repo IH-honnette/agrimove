@@ -4,6 +4,7 @@ import {
   RefreshControl, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
 import { fetchDrivers } from '../api/drivers';
 import DriverCard from '../components/DriverCard';
@@ -30,14 +31,23 @@ export default function DriverListScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [activeType, setActiveType] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
+  const [nearMe, setNearMe] = useState(false);
+  const [userCoords, setUserCoords] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
-  const loadDrivers = useCallback(async () => {
+  const loadDrivers = useCallback(async (coords) => {
     setError(null);
     try {
-      const data = await fetchDrivers(
-        { type: activeType || undefined, available: availableOnly || undefined },
-        token
-      );
+      const filters = {
+        type: activeType || undefined,
+        available: availableOnly || undefined,
+      };
+      if (coords) {
+        filters.lat = coords.latitude;
+        filters.lng = coords.longitude;
+        filters.radius = 50;
+      }
+      const data = await fetchDrivers(filters, token);
       setDrivers(data);
     } catch {
       setError('Could not load drivers. Check your connection and make sure the server is running.');
@@ -47,11 +57,37 @@ export default function DriverListScreen({ navigation }) {
     }
   }, [activeType, availableOnly, token]);
 
-  useEffect(() => { loadDrivers(); }, [loadDrivers]);
+  useEffect(() => {
+    loadDrivers(nearMe ? userCoords : null);
+  }, [loadDrivers, nearMe, userCoords]);
+
+  async function handleNearMe() {
+    if (nearMe) {
+      setNearMe(false);
+      setUserCoords(null);
+      return;
+    }
+    setLocationLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Location permission denied. Please enable it in Settings.');
+        setLocationLoading(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setUserCoords(pos.coords);
+      setNearMe(true);
+    } catch {
+      setError('Could not get your location.');
+    } finally {
+      setLocationLoading(false);
+    }
+  }
 
   function onRefresh() {
     setRefreshing(true);
-    loadDrivers();
+    loadDrivers(nearMe ? userCoords : null);
   }
 
   return (
@@ -85,8 +121,24 @@ export default function DriverListScreen({ navigation }) {
             active={availableOnly}
             onPress={() => setAvailableOnly(v => !v)}
           />
+          <TouchableOpacity
+            style={[styles.nearChip, nearMe && styles.nearChipActive]}
+            onPress={handleNearMe}
+            disabled={locationLoading}
+          >
+            {locationLoading
+              ? <ActivityIndicator size="small" color={nearMe ? colors.white : colors.primary} style={{ marginRight: 4 }} />
+              : <Text style={styles.nearChipIcon}>📍</Text>}
+            <Text style={[styles.nearChipText, nearMe && styles.nearChipTextActive]}>Near Me</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {nearMe && (
+        <View style={styles.nearBanner}>
+          <Text style={styles.nearBannerText}>Showing drivers within 50 km · sorted by distance</Text>
+        </View>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -96,7 +148,7 @@ export default function DriverListScreen({ navigation }) {
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadDrivers}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => loadDrivers(nearMe ? userCoords : null)}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -117,7 +169,9 @@ export default function DriverListScreen({ navigation }) {
             </Text>
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>No drivers match your filters.</Text>
+            <Text style={styles.empty}>
+              {nearMe ? 'No drivers with live location within 50 km.' : 'No drivers match your filters.'}
+            </Text>
           }
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
@@ -131,26 +185,34 @@ export default function DriverListScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   logo: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   logoIcon: { fontSize: 22 },
   logoText: { fontSize: fontSize.lg, fontWeight: '800', color: colors.text },
   avatarCircle: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: fontSize.sm, fontWeight: '700', color: colors.primary },
   filterWrap: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border },
   filterBar: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  nearChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+    borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.primary,
+    backgroundColor: colors.white, marginRight: spacing.sm,
+  },
+  nearChipActive: { backgroundColor: colors.primary },
+  nearChipIcon: { fontSize: 13 },
+  nearChipText: { fontSize: fontSize.sm, fontWeight: '600', color: colors.primary },
+  nearChipTextActive: { color: colors.white },
+  nearBanner: {
+    backgroundColor: colors.primaryLight, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+  },
+  nearBannerText: { fontSize: fontSize.xs, color: colors.primaryDark, fontWeight: '600' },
   list: { padding: spacing.lg },
   count: { fontSize: fontSize.xs, color: colors.textMuted, marginBottom: spacing.md, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' },
   empty: { textAlign: 'center', color: colors.textMuted, paddingVertical: spacing.xxxl },
