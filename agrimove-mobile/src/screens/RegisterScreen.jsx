@@ -25,8 +25,6 @@ export default function RegisterScreen({ navigation }) {
   const [vehicleType, setVehicleType] = useState('Truck');
   const [capacity, setCapacity] = useState('');
   const [location, setLocation] = useState('');
-  const [rate, setRate] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -35,7 +33,7 @@ export default function RegisterScreen({ navigation }) {
       setError('Name, email, and password are required');
       return;
     }
-    if (role === 'driver' && (!phone.trim() || !vehicle.trim() || !capacity.trim() || !location.trim() || !rate.trim())) {
+    if (role === 'driver' && (!phone.trim() || !vehicle.trim() || !capacity.trim() || !location.trim())) {
       setError('All driver fields are required');
       return;
     }
@@ -50,7 +48,6 @@ export default function RegisterScreen({ navigation }) {
           type: vehicleType,
           capacity: capacity.trim(),
           location: location.trim(),
-          rate: rate.trim(),
         });
       }
       const { token, user } = await apiSignup(payload);
@@ -186,15 +183,6 @@ export default function RegisterScreen({ navigation }) {
                 autoCapitalize="words"
               />
 
-              <Text style={styles.label}>Daily Rate (RWF) *</Text>
-              <TextInput
-                style={styles.input}
-                value={rate}
-                onChangeText={setRate}
-                placeholder="e.g. 15000"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numeric"
-              />
             </>
           )}
 

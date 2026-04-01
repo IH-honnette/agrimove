@@ -67,6 +67,27 @@ router.get('/mine', async (req, res, next) => {
   }
 });
 
+// GET /api/bookings/driver — bookings assigned to the authenticated driver
+router.get('/driver', async (req, res, next) => {
+  try {
+    const decoded = getUserFromToken(req);
+    if (!decoded) return res.status(401).json({ error: 'Authentication required' });
+    if (decoded.role !== 'driver') return res.status(403).json({ error: 'Only drivers can access this' });
+
+    const { rows } = await pool.query(
+      `SELECT b.*
+       FROM bookings b
+       JOIN drivers d ON b.driver_id = d.id
+       WHERE d.user_id = $1
+       ORDER BY b.created_at DESC`,
+      [decoded.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/bookings (list all)
 router.get('/', async (_req, res, next) => {
   try {

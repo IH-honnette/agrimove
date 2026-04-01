@@ -21,3 +21,11 @@ export async function fetchMyBookings(token) {
   if (!res.ok) throw new Error('Failed to fetch bookings');
   return res.json();
 }
+
+export async function fetchDriverBookings(token) {
+  const res = await fetch(`${BASE}/bookings/driver`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch driver bookings');
+  return res.json();
+}

@@ -15,7 +15,7 @@ function signToken(user) {
 router.post('/signup', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { name, email, phone, password, role = 'customer', vehicle, type, capacity, location, rate } = req.body;
+    const { name, email, phone, password, role = 'customer', vehicle, type, capacity, location } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
@@ -29,11 +29,8 @@ router.post('/signup', async (req, res) => {
     if (role !== 'customer' && role !== 'driver') {
       return res.status(400).json({ error: 'Role must be customer or driver' });
     }
-    if (role === 'driver' && (!vehicle || !type || !capacity || !location || !rate)) {
-      return res.status(400).json({ error: 'Drivers must provide vehicle, type, capacity, location, and rate' });
-    }
-    if (role === 'driver' && isNaN(parseInt(rate, 10))) {
-      return res.status(400).json({ error: 'Rate must be a valid number' });
+    if (role === 'driver' && (!vehicle || !type || !capacity || !location)) {
+      return res.status(400).json({ error: 'Drivers must provide vehicle, type, capacity, and location' });
     }
     const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
@@ -52,7 +49,7 @@ router.post('/signup', async (req, res) => {
       const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
       await client.query(
         'INSERT INTO drivers (name, initials, vehicle, type, capacity, rating, trips, rate, available, location, phone, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
-        [name, initials, vehicle, type, capacity, 4.5, 0, parseInt(rate, 10), true, location, phone || null, user.id]
+        [name, initials, vehicle, type, capacity, 4.5, 0, 0, true, location, phone || null, user.id]
       );
     }
 

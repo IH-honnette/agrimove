@@ -11,6 +11,7 @@ import BookingConfirmedScreen from '../screens/BookingConfirmedScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import PriceEstimatorScreen from '../screens/PriceEstimatorScreen';
+import DriverDashboardScreen from '../screens/DriverDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +27,11 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} options={{ animation: 'slide_from_right' }} />
+          </>
+        ) : user.role === 'driver' ? (
+          <>
+            <Stack.Screen name="DriverDashboard" component={DriverDashboardScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} options={{ animation: 'slide_from_right' }} />
           </>
         ) : (
           <>
