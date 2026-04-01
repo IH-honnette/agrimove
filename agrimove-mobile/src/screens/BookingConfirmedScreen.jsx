@@ -1,10 +1,20 @@
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, radius, fontSize } from '../theme';
 
 export default function BookingConfirmedScreen({ route, navigation }) {
   const { booking } = route.params;
   const rawPhone = (booking.driver_phone || '').replace(/\s/g, '');
+
+  async function handleCall() {
+    const url = `tel:${rawPhone}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert('Cannot call', `Call the driver directly at ${booking.driver_phone}`);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -24,7 +34,7 @@ export default function BookingConfirmedScreen({ route, navigation }) {
           <Text style={styles.phoneNumber}>{booking.driver_phone}</Text>
           <TouchableOpacity
             style={styles.callBtn}
-            onPress={() => Linking.openURL(`tel:${rawPhone}`)}
+            onPress={handleCall}
             activeOpacity={0.8}
           >
             <Text style={styles.callBtnText}>📞  Call Now</Text>
