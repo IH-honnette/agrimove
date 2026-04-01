@@ -28,7 +28,6 @@ export default function HeroSearch({ onSearch }) {
   const [dest, setDest] = useState('');
   const [status, setStatus] = useState('');
   const [result, setResult] = useState(null);
-  const [cargo, setCargo] = useState('');
   
   const timerRef = useRef(null);
 
@@ -63,7 +62,7 @@ export default function HeroSearch({ onSearch }) {
 
   function handleSearchClick() {
     if (!result) return;
-    onSearch({ pickup, dest, dist: result.dist, cargo });
+    onSearch({ pickup, dest, dist: result.dist });
     
     // Smooth scroll down to drivers section
     document.getElementById('drivers-list')?.scrollIntoView({ behavior: 'smooth' });
@@ -72,7 +71,7 @@ export default function HeroSearch({ onSearch }) {
   return (
     <div className="hero-section">
       <div className="hero-content">
-        <h1>Move Your Harvest<br />with <span>Trusted Drivers</span></h1>
+        <h1>Move Your Harvest<br />with Trusted Drivers</h1>
         <p className="hero-sub">Type your pickup and destination — we&apos;ll calculate distance and fare automatically.</p>
 
         <div className="hero-search-card">
@@ -128,31 +127,6 @@ export default function HeroSearch({ onSearch }) {
               </div>
             </>
           )}
-
-          <div className="hs-row">
-            <div className="hs-group">
-              <label>Cargo Type</label>
-              <select value={cargo} onChange={e => setCargo(e.target.value)}>
-                <option value="">— Select crop / cargo —</option>
-                <optgroup label="Vegetables">
-                  <option>Potatoes</option><option>Tomatoes</option><option>Onions</option>
-                  <option>Cabbage</option><option>Carrots</option><option>Eggplant</option>
-                </optgroup>
-                <optgroup label="Fruits">
-                  <option>Bananas</option><option>Avocados</option><option>Mangoes</option>
-                  <option>Pineapples</option><option>Passion Fruit</option>
-                </optgroup>
-                <optgroup label="Grains &amp; Legumes">
-                  <option>Maize / Corn</option><option>Beans</option><option>Sorghum</option>
-                  <option>Rice</option><option>Wheat</option><option>Soybeans</option>
-                </optgroup>
-                <optgroup label="Other">
-                  <option>Livestock / Animals</option><option>Dairy Products</option>
-                  <option>Coffee / Tea</option><option>Sugar Cane</option>
-                </optgroup>
-              </select>
-            </div>
-          </div>
 
           <button
             className="hs-search-btn"
